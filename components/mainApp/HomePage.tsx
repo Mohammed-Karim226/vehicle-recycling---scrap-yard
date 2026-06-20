@@ -5,6 +5,9 @@ import Header from "./Header";
 import Footer from "./Footer";
 import { AnimatePresence, motion } from "motion/react";
 import ScrapQuoteSection from "./ScrapQuoteSection";
+import UspCoreValues from "./UspCoreValues";
+import RecentArrivals from "./RecentArrivals";
+import FindPartsView from "./FindPartsView";
 
 const HomePage = () => {
   const [currentTab, setCurrentTab] = useState<string>("home");
@@ -56,9 +59,8 @@ const HomePage = () => {
               transition={{ type: "spring", stiffness: 220, damping: 25 }}
               className="space-y-16"
             >
-               {/* Hero Header Presentation with organic fluid lighting overlay */}
+              {/* Hero Header Presentation with organic fluid lighting overlay */}
               <div className="text-center max-w-4xl mx-auto space-y-6 pt-4 pb-2 relative">
-
                 {/* Embedded crimson fluid glow orb */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-72 w-72 bg-gradient-to-tr from-red-600/10 via-pink-600/5 to-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -70,11 +72,16 @@ const HomePage = () => {
 
                   <h1 className="text-4xl sm:text-5xl lg:text-6.5xl font-black tracking-tight text-white uppercase leading-[1.05] font-sans">
                     PETERBOROUGH&apos;S PREMIER <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-amber-500">VEHICLE BREAKERS</span> YARD
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-amber-500">
+                      VEHICLE BREAKERS
+                    </span>{" "}
+                    YARD
                   </h1>
 
                   <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed font-sans">
-                    We buy any car for scrap or salvage. Get instant high-index quotes, same-day payout transfers, and free hydraulic collection across Peterborough and Cambridgeshire.
+                    We buy any car for scrap or salvage. Get instant high-index
+                    quotes, same-day payout transfers, and free hydraulic
+                    collection across Peterborough and Cambridgeshire.
                   </p>
                 </div>
 
@@ -83,6 +90,19 @@ const HomePage = () => {
                   <ScrapQuoteSection onQuoteAdded={handleQuoteAdded} />
                 </div>
               </div>
+              <UspCoreValues />
+              <RecentArrivals setCurrentTab={setCurrentTab} />
+            </motion.div>
+          )}
+          {currentTab === "parts" && (
+            <motion.div
+              key="parts-tab"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2 }}
+            >
+              <FindPartsView onQuoteAdded={handleQuoteAdded} />
             </motion.div>
           )}
         </AnimatePresence>
