@@ -9,6 +9,7 @@ import UspCoreValues from "./UspCoreValues";
 import RecentArrivals from "./RecentArrivals";
 import FindPartsView from "./FindPartsView";
 import ScrapPricesView from "./ScrapPricesView";
+import AboutContactView from "./AboutContactView";
 
 const HomePage = () => {
   const [currentTab, setCurrentTab] = useState<string>("home");
@@ -115,6 +116,18 @@ const HomePage = () => {
               transition={{ duration: 0.2 }}
             >
               <ScrapPricesView />
+            </motion.div>
+          )}
+           {/* About View */}
+          {currentTab === "about" && (
+            <motion.div
+              key="about-tab"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2 }}
+            >
+              <AboutContactView />
             </motion.div>
           )}
         </AnimatePresence>
