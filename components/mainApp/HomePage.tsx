@@ -14,16 +14,8 @@ import MyRequestsView from "./MyRequestsView";
 
 const HomePage = () => {
   const [currentTab, setCurrentTab] = useState<string>("home");
-  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
 
-  const handleOpenQuoteModal = () => {
-    setQuoteModalOpen(true);
-  };
-
-  const handleCloseQuoteModal = () => {
-    setQuoteModalOpen(false);
-  };
   // Sync request count from full-stack DB
   const updateRequestCount = async () => {
     try {
@@ -47,7 +39,6 @@ const HomePage = () => {
       <Header
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
-        onOpenQuoteModal={handleOpenQuoteModal}
         requestCount={requestCount}
       />
       {/* Main content area */}
@@ -119,7 +110,7 @@ const HomePage = () => {
               <ScrapPricesView />
             </motion.div>
           )}
-           {/* About View */}
+          {/* About View */}
           {currentTab === "about" && (
             <motion.div
               key="about-tab"
@@ -131,7 +122,7 @@ const HomePage = () => {
               <AboutContactView />
             </motion.div>
           )}
-           {/* Requests View */}
+          {/* Requests View */}
           {currentTab === "requests" && (
             <motion.div
               key="requests-tab"
@@ -143,7 +134,6 @@ const HomePage = () => {
               <MyRequestsView />
             </motion.div>
           )}
-
         </AnimatePresence>
       </main>
       <Footer setCurrentTab={setCurrentTab} />
