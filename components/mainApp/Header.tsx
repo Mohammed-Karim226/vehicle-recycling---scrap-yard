@@ -2,16 +2,16 @@
 import { motion } from "motion/react";
 import { Car, Hammer, Search, Info, ClipboardList, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ScrapQuoteDialog from "./ScrapQuoteDialog";
 
 
 interface HeaderProps {
   currentTab: string;
   setCurrentTab: (tab: string) => void;
-  onOpenQuoteModal: () => void;
   requestCount: number;
 }
 
-export default function Header({ currentTab, setCurrentTab, onOpenQuoteModal, requestCount }: HeaderProps) {
+export default function Header({ currentTab, setCurrentTab, requestCount }: HeaderProps) {
   
   const navItems = [
     { id: "home", label: "Home", icon: Car },
@@ -84,16 +84,21 @@ export default function Header({ currentTab, setCurrentTab, onOpenQuoteModal, re
         </nav>
 
         <div className="flex items-center space-x-3">
-          <button
-            id="nav-get-quote-cta"
-            onClick={onOpenQuoteModal}
-            className="group relative bg-gradient-to-r from-red-600 via-pink-600 to-amber-500 p-[1px] rounded-xl hover:shadow-[0_0_25px_-5px_rgba(239,68,68,0.5)] transition-all active:scale-95 duration-300 cursor-pointer"
-          >
-            <div className="bg-slate-950 hover:bg-transparent text-white font-extrabold text-xs px-5 py-3 rounded-xl uppercase tracking-wider font-mono transition-colors duration-300 flex items-center space-x-2">
-              <span className="group-hover:text-white text-slate-200">Get A Quote</span>
-              <span className="text-red-400 group-hover:text-white font-serif">→</span>
-            </div>
-          </button>
+         <ScrapQuoteDialog onQuoteAdded={() => setCurrentTab("requests")}>
+            <button
+              id="nav-get-quote-cta"
+              className="group relative bg-gradient-to-r from-red-600 via-pink-600 to-amber-500 p-[1px] rounded-xl hover:shadow-[0_0_25px_-5px_rgba(239,68,68,0.5)] transition-all active:scale-95 duration-300 cursor-pointer"
+            >
+              <div className="bg-slate-950 hover:bg-transparent text-white font-extrabold text-xs px-5 py-3 rounded-xl uppercase tracking-wider font-mono transition-colors duration-300 flex items-center space-x-2">
+                <span className="group-hover:text-white text-slate-200">
+                  Get A Quote
+                </span>
+                <span className="text-red-400 group-hover:text-white font-serif">
+                  →
+                </span>
+              </div>
+            </button>
+          </ScrapQuoteDialog>
         </div>
       </div>
 
