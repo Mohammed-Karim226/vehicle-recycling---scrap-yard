@@ -5,9 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/* ------------------------------------------------------------------ */
-/* localStorage helper — was duplicated in two places in the original */
-/* ------------------------------------------------------------------ */
 export function appendIdToStorage(key: string, id: string | undefined) {
   if (!id) return;
   try {
