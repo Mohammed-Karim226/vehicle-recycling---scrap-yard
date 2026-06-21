@@ -11,6 +11,7 @@ import FindPartsView from "./FindPartsView";
 import ScrapPricesView from "./ScrapPricesView";
 import AboutContactView from "./AboutContactView";
 import MyRequestsView from "./MyRequestsView";
+import AdminDashboardView from "./admin/AdminDashboardView";
 
 const HomePage = () => {
   const [currentTab, setCurrentTab] = useState<string>("home");
@@ -132,6 +133,18 @@ const HomePage = () => {
               transition={{ duration: 0.2 }}
             >
               <MyRequestsView />
+            </motion.div>
+          )}
+          {/* Admin Dashboard View */}
+          {currentTab === "admin" && (
+            <motion.div
+              key="admin-tab"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2 }}
+            >
+              <AdminDashboardView onRefreshTrigger={handleQuoteAdded} />
             </motion.div>
           )}
         </AnimatePresence>

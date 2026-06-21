@@ -5,7 +5,7 @@ export interface VehicleYard {
   year: number;
   trim: string;
   arrivedDate: string;
-  status: 'In Yard' | 'Dismantled' | 'Crushed';
+  status: 'In Yard' | 'Dismantled' | 'Scrapped';
   image: string;
   color: string;
 }
@@ -44,5 +44,10 @@ export interface PartQuoteSubmitted {
   partsNeeded: string;
   name: string;
   phone: string;
-  status: 'Pending' | 'Approved' | 'Unavailable';
+  timestamp?: string;
+  notes?: string;
+  status: 'Pending Search' | 'Part Located' | 'Shipped' | 'No Stock' | 'Cancelled';
 }
+
+/** Admin dashboard sub-tab identifiers */
+export type AdminSubTab = 'overview' | 'scrap' | 'parts' | 'yard';
