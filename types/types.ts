@@ -8,6 +8,8 @@ export interface VehicleYard {
   status: 'In Yard' | 'Dismantled' | 'Scrapped';
   image: string;
   color: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ScrapMetalPrice {
@@ -16,6 +18,8 @@ export interface ScrapMetalPrice {
   pricePerKgMin: number;
   pricePerKgMax: number;
   trend: 'Rising' | 'Stable' | 'Falling';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ScrapQuoteRequest {
@@ -35,6 +39,8 @@ export interface ScrapValuationResult {
   timestamp?: string;
   status?: string;
   notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PartQuoteSubmitted {
@@ -47,6 +53,8 @@ export interface PartQuoteSubmitted {
   timestamp?: string;
   notes?: string;
   status: 'Pending Search' | 'Part Located' | 'Shipped' | 'No Stock' | 'Cancelled';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** Admin dashboard sub-tab identifiers */

@@ -10,6 +10,8 @@ import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ScrapValuationResult } from "@/types/types";
+import { generateScrapValuation } from "@/lib/actions/scrapValuationActions";
+import { createPartRequest } from "@/lib/actions/partRequestActions";
 
 interface ScrapQuoteSectionProps {
   onQuoteAdded: () => void;
@@ -139,19 +141,11 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = false }
       abortControllerRef.current = controller;
 
       try {
-        const res = await fetch("/api/valuate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            registration: values.registration.toUpperCase(),
-            postcode: values.postcode.toUpperCase(),
-          }),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) throw new Error("Valuation service is busy. Please try again.");
-
-        const data: ScrapValuationResult = await res.json();
+        const data = await generateScrapValuation(
+          values.registration.toUpperCase(),
+          values.postcode.toUpperCase()
+        );
+        
         if (!isMountedRef.current) return;
 
         appendIdToStorage("rrs_my_scrap_ids", data.id);
@@ -175,24 +169,18 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = false }
       dispatch({ type: "CONFIRM_START" });
 
       try {
-        const res = await fetch("/api/part-requests", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            vehicleId: "ScrapQuote",
-            vehicleName: `Scrap Car: ${valuation.vehicleName} [${valuation.registration}]`,
-            partsNeeded: `COMPLETE SCRAP VEHICLE REMOVAL. Postcode: ${valuation.postcode}. Weight: ${valuation.weightKg}kg. Scrap Value: £${valuation.estimatedValue}`,
-            name: "Scrap Customer",
-            phone: values.contactInfo.trim(),
-          }),
+        const partRequest = await createPartRequest({
+          vehicleId: "ScrapQuote",
+          vehicleName: `Scrap Car: ${valuation.vehicleName} [${valuation.registration}]`,
+          partsNeeded: `COMPLETE SCRAP VEHICLE REMOVAL. Postcode: ${valuation.postcode}. Weight: ${valuation.weightKg}kg. Scrap Value: £${valuation.estimatedValue}`,
+          name: "Scrap Customer",
+          phone: values.contactInfo.trim(),
+          status: "Pending_Search"
         });
-
-        if (!res.ok) throw new Error("Could not schedule collection.");
-
-        const resData = await res.json();
+        
         if (!isMountedRef.current) return;
 
-        appendIdToStorage("rrs_my_part_ids", resData.requestId);
+        appendIdToStorage("rrs_my_part_ids", partRequest.id);
         dispatch({ type: "CONFIRM_SUCCESS", contact: values.contactInfo.trim() });
         onQuoteAdded();
       } catch (err: unknown) {

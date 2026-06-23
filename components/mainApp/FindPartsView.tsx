@@ -13,6 +13,7 @@ import {
   PART_CATEGORIES,
 } from "@/lib/mockData";
 import { VehicleYard } from "@/types/types";
+import type { VehicleYard as PrismaVehicleYard, PartRequestStatus } from "@prisma/client";
 import { appendIdToStorage } from "@/lib/utils";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RequestPartDialog } from "./RequestPartDialog";
+import { getAllVehicleYards, createVehicleYard } from "@/lib/actions/vehicleYardActions";
+import { createPartRequest } from "@/lib/actions/partRequestActions";
 
 interface FindPartsViewProps {
   onQuoteAdded: () => void;
@@ -137,31 +140,40 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
     };
   }, []);
 
+  // Helper function to convert Prisma vehicle to app type
+  const convertPrismaVehicle = (prismaVehicle: PrismaVehicleYard): VehicleYard => {
+    return {
+      id: prismaVehicle.id,
+      make: prismaVehicle.make,
+      model: prismaVehicle.model,
+      year: prismaVehicle.year,
+      trim: prismaVehicle.trim,
+      arrivedDate: prismaVehicle.arrivedDate.toISOString(),
+      status: prismaVehicle.status.replace("_", " ") as VehicleYard["status"],
+      image: prismaVehicle.image,
+      color: prismaVehicle.color
+    };
+  };
+
   // Fetch real-time vehicles from database API
   useEffect(() => {
-    const controller = new AbortController();
     async function fetchVehicles() {
       setLoadingVehicles(true);
       try {
-        const res = await fetch("/api/vehicles", { signal: controller.signal });
-        if (res.ok && isMountedRef.current) {
-          const list = await res.json();
-          if (list && list.length > 0) {
-            setVehicles(list);
-          }
+        const list = await getAllVehicleYards();
+        if (list && list.length > 0) {
+          setVehicles(list.map(convertPrismaVehicle));
         }
       } catch (e) {
-        if (e instanceof DOMException && e.name === "AbortError") return;
         console.warn(
           "Could not fetch database vehicles, holding local fallback:",
           e,
         );
       } finally {
-        if (isMountedRef.current) setLoadingVehicles(false);
+        setLoadingVehicles(false);
       }
     }
     fetchVehicles();
-    return () => controller.abort();
   }, []);
 
   // Filter list of vehicles in Peterborough breakers yard
@@ -179,25 +191,18 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
       dispatch({ type: "SUBMIT_START" });
 
       try {
-        const res = await fetch("/api/part-requests", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            vehicleId: "GeneralInquiry",
-            vehicleName: `${values.year || "N/A"} ${values.make} ${values.model} (Custom Request)`,
-            partsNeeded: `[Category: ${values.category || "Other"}] ${values.parts}`,
-            name: values.name.trim(),
-            phone: values.phone.trim(),
-          }),
+        const partRequest = await createPartRequest({
+          vehicleId: "GeneralInquiry",
+          vehicleName: `${values.year || "N/A"} ${values.make} ${values.model} (Custom Request)`,
+          partsNeeded: `[Category: ${values.category || "Other"}] ${values.parts}`,
+          name: values.name.trim(),
+          phone: values.phone.trim(),
+          status: "Pending_Search" as PartRequestStatus
         });
-
-        if (!res.ok)
-          throw new Error("Could not schedule collection slot at this time.");
-
-        const payload = await res.json();
+        
         if (!isMountedRef.current) return;
 
-        appendIdToStorage("rrs_my_part_ids", payload.requestId);
+        appendIdToStorage("rrs_my_part_ids", partRequest.id);
         dispatch({ type: "SUBMIT_SUCCESS" });
         onQuoteAdded();
 

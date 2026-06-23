@@ -1,7 +1,78 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 import type { VehicleYard, ScrapValuationResult, PartQuoteSubmitted } from "@/types/types";
+import type { VehicleYard as PrismaVehicleYard, ScrapValuation as PrismaScrapValuation, PartRequest as PrismaPartRequest, VehicleStatus, ScrapQuoteStatus, PartRequestStatus } from "@prisma/client";
+import { 
+  getAllVehicleYards, 
+  createVehicleYard, 
+  updateVehicleYard, 
+  deleteVehicleYard 
+} from "@/lib/actions/vehicleYardActions";
+import { 
+  getAllScrapValuations, 
+  updateScrapValuation 
+} from "@/lib/actions/scrapValuationActions";
+import { 
+  getAllPartRequests, 
+  updatePartRequest 
+} from "@/lib/actions/partRequestActions";
+
+// Helper functions to convert Prisma types to app types
+function convertVehicleYard(prismaVehicle: PrismaVehicleYard): VehicleYard {
+  return {
+    id: prismaVehicle.id,
+    make: prismaVehicle.make,
+    model: prismaVehicle.model,
+    year: prismaVehicle.year,
+    trim: prismaVehicle.trim,
+    arrivedDate: prismaVehicle.arrivedDate.toISOString(),
+    status: prismaVehicle.status.replace("_", " ") as VehicleYard["status"],
+    image: prismaVehicle.image,
+    color: prismaVehicle.color
+  };
+}
+
+function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValuationResult {
+  return {
+    id: prismaValuation.id,
+    registration: prismaValuation.registration,
+    postcode: prismaValuation.postcode,
+    vehicleName: prismaValuation.vehicleName,
+    estimatedValue: prismaValuation.estimatedValue,
+    weightKg: prismaValuation.weightKg,
+    engineSize: prismaValuation.engineSize,
+    fuelType: prismaValuation.fuelType,
+    status: prismaValuation.status,
+    notes: prismaValuation.notes ?? undefined
+  };
+}
+
+function convertPartRequest(prismaRequest: PrismaPartRequest): PartQuoteSubmitted {
+  return {
+    requestId: prismaRequest.id,
+    vehicleId: prismaRequest.vehicleId ?? undefined,
+    vehicleName: prismaRequest.vehicleName,
+    partsNeeded: prismaRequest.partsNeeded,
+    name: prismaRequest.name,
+    phone: prismaRequest.phone,
+    status: prismaRequest.status.replace("_", " ") as PartQuoteSubmitted["status"],
+    notes: prismaRequest.notes ?? undefined
+  };
+}
+
+// Convert app status to Prisma status
+function appToPrismaVehicleStatus(status: string): VehicleStatus {
+  return status.replace(" ", "_") as VehicleStatus;
+}
+
+function appToPrismaPartRequestStatus(status: string): PartRequestStatus {
+  return status.replace(" ", "_") as PartRequestStatus;
+}
+
+function appToPrismaScrapQuoteStatus(status: string): ScrapQuoteStatus {
+  return status as ScrapQuoteStatus;
+}
 
 // ────────────────────────────────────────────────────────────
 // New vehicle form shape
@@ -67,45 +138,25 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Cleanup pending requests on unmount
-  useEffect(() => {
-    return () => {
-      abortControllerRef.current?.abort();
-    };
-  }, []);
-
   const clearError = useCallback(() => setError(null), []);
 
   const fetchAllData = useCallback(async () => {
-    // Abort any in-flight request
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
     setLoading(true);
     setError(null);
 
     try {
-      const [vRes, sRes, pRes] = await Promise.all([
-        fetch("/api/vehicles", { signal: controller.signal }),
-        fetch("/api/scrap-quotes", { signal: controller.signal }),
-        fetch("/api/part-requests", { signal: controller.signal }),
+      const [prismaVehicles, prismaValuations, prismaRequests] = await Promise.all([
+        getAllVehicleYards(),
+        getAllScrapValuations(),
+        getAllPartRequests()
       ]);
 
-      if (vRes.ok) setVehicles(await vRes.json());
-      else setError("Failed to load vehicles.");
-
-      if (sRes.ok) setScrapQuotes(await sRes.json());
-      else setError((prev) => (prev ? `${prev} ` : "") + "Failed to load scrap quotes.");
-
-      if (pRes.ok) setPartRequests(await pRes.json());
-      else setError((prev) => (prev ? `${prev} ` : "") + "Failed to load part requests.");
+      setVehicles(prismaVehicles.map(convertVehicleYard));
+      setScrapQuotes(prismaValuations.map(convertScrapValuation));
+      setPartRequests(prismaRequests.map(convertPartRequest));
     } catch (e: unknown) {
-      if (e instanceof DOMException && e.name === "AbortError") return;
       console.error("Failed to sync dashboard:", e);
-      setError("Network error — could not reach the server.");
+      setError("Failed to load data.");
     } finally {
       setLoading(false);
     }
@@ -116,21 +167,14 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     async (quoteId: string, status: string, notes: string) => {
       setActionLoading(quoteId);
       try {
-        const res = await fetch(`/api/scrap-quotes/${quoteId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, notes }),
-        });
-        if (res.ok) {
-          setScrapQuotes((prev) =>
-            prev.map((q) => (q.id === quoteId ? { ...q, status, notes } : q))
-          );
-          onRefreshTrigger?.();
-        } else {
-          setError("Failed to update scrap quote status.");
-        }
+        const prismaStatus = appToPrismaScrapQuoteStatus(status);
+        const updatedValuation = await updateScrapValuation(quoteId, { status: prismaStatus, notes });
+        setScrapQuotes((prev) =>
+          prev.map((q) => (q.id === quoteId ? convertScrapValuation(updatedValuation) : q))
+        );
+        onRefreshTrigger?.();
       } catch {
-        setError("Network error updating scrap quote.");
+        setError("Failed to update scrap quote status.");
       } finally {
         setActionLoading(null);
       }
@@ -143,21 +187,14 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     async (requestId: string, status: string, notes: string) => {
       setActionLoading(requestId);
       try {
-        const res = await fetch(`/api/part-requests/${requestId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, notes }),
-        });
-        if (res.ok) {
-          setPartRequests((prev) =>
-            prev.map((p) => (p.requestId === requestId ? { ...p, status: status as PartQuoteSubmitted["status"], notes } : p))
-          );
-          onRefreshTrigger?.();
-        } else {
-          setError("Failed to update part request status.");
-        }
+        const prismaStatus = appToPrismaPartRequestStatus(status);
+        const updatedRequest = await updatePartRequest(requestId, { status: prismaStatus, notes });
+        setPartRequests((prev) =>
+          prev.map((p) => (p.requestId === requestId ? convertPartRequest(updatedRequest) : p))
+        );
+        onRefreshTrigger?.();
       } catch {
-        setError("Network error updating part request.");
+        setError("Failed to update part request status.");
       } finally {
         setActionLoading(null);
       }
@@ -170,21 +207,14 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     async (vehicleId: string, status: string) => {
       setActionLoading(vehicleId);
       try {
-        const res = await fetch(`/api/vehicles/${vehicleId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status }),
-        });
-        if (res.ok) {
-          setVehicles((prev) =>
-            prev.map((v) => (v.id === vehicleId ? { ...v, status: status as VehicleYard["status"] } : v))
-          );
-          onRefreshTrigger?.();
-        } else {
-          setError("Failed to update vehicle status.");
-        }
+        const prismaStatus = appToPrismaVehicleStatus(status);
+        const updatedVehicle = await updateVehicleYard(vehicleId, { status: prismaStatus });
+        setVehicles((prev) =>
+          prev.map((v) => (v.id === vehicleId ? convertVehicleYard(updatedVehicle) : v))
+        );
+        onRefreshTrigger?.();
       } catch {
-        setError("Network error updating vehicle.");
+        setError("Failed to update vehicle status.");
       } finally {
         setActionLoading(null);
       }
@@ -197,18 +227,12 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     async (vehicleId: string): Promise<boolean> => {
       setActionLoading(`del-${vehicleId}`);
       try {
-        const res = await fetch(`/api/vehicles/${vehicleId}`, {
-          method: "DELETE",
-        });
-        if (res.ok) {
-          setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
-          onRefreshTrigger?.();
-          return true;
-        }
-        setError("Failed to delete vehicle.");
-        return false;
+        await deleteVehicleYard(vehicleId);
+        setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
+        onRefreshTrigger?.();
+        return true;
       } catch {
-        setError("Network error deleting vehicle.");
+        setError("Failed to delete vehicle.");
         return false;
       } finally {
         setActionLoading(null);
@@ -222,21 +246,21 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     async (formData: NewVehicleFormData): Promise<boolean> => {
       setActionLoading("add-vehicle");
       try {
-        const res = await fetch("/api/vehicles", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+        const prismaStatus = appToPrismaVehicleStatus(formData.status);
+        const added = await createVehicleYard({
+          make: formData.make,
+          model: formData.model,
+          year: formData.year,
+          trim: formData.trim,
+          status: prismaStatus,
+          color: formData.color,
+          image: formData.image
         });
-        if (res.ok) {
-          const added: VehicleYard = await res.json();
-          setVehicles((prev) => [added, ...prev]);
-          onRefreshTrigger?.();
-          return true;
-        }
-        setError("Failed to add vehicle.");
-        return false;
+        setVehicles((prev) => [convertVehicleYard(added), ...prev]);
+        onRefreshTrigger?.();
+        return true;
       } catch {
-        setError("Network error adding vehicle.");
+        setError("Failed to add vehicle.");
         return false;
       } finally {
         setActionLoading(null);

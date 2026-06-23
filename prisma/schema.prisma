@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum VehicleStatus {
+  In_Yard
+  Dismantled
+  Scrapped
+}
+
+enum PriceTrend {
+  Rising
+  Stable
+  Falling
+}
+
+enum PartRequestStatus {
+  Pending_Search
+  Part_Located
+  Shipped
+  No_Stock
+  Cancelled
+}
+
+enum ScrapQuoteStatus {
+  Pending
+  Approved
+  Rejected
+  Completed
+}
+
+model VehicleYard {
+  id          String        @id @default(uuid()) @db.Uuid
+
+  make        String
+  model       String
+  year        Int
+  trim        String
+
+  arrivedDate DateTime      @default(now())
+
+  status      VehicleStatus @default(In_Yard)
+
+  image       String
+  color       String
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([make])
+  @@index([model])
+  @@index([status])
+}
+
+model ScrapMetalPrice {
+  id            String      @id @default(uuid()) @db.Uuid
+
+  category      String
+
+  pricePerKgMin Float
+  pricePerKgMax Float
+
+  trend         PriceTrend  @default(Stable)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([category])
+}
+
+model ScrapValuation {
+  id             String            @id @default(uuid()) @db.Uuid
+
+  registration   String
+  postcode       String
+  vehicleName    String
+
+  estimatedValue Float
+  weightKg       Float
+
+  engineSize     String
+  fuelType       String
+
+  status         ScrapQuoteStatus  @default(Pending)
+
+  notes          String?
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([registration])
+  @@index([postcode])
+  @@index([status])
+}
+
+model PartRequest {
+  id          String            @id @default(uuid()) @db.Uuid
+
+  vehicleId   String?
+  vehicleName String
+
+  partsNeeded String
+
+  name        String
+  phone       String
+
+  status      PartRequestStatus @default(Pending_Search)
+
+  notes       String?
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([vehicleName])
+  @@index([status])
+}
