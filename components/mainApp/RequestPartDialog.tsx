@@ -10,7 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { VehicleYard } from "@/types/types";
+import type { PartRequestStatus } from "@prisma/client";
 import { appendIdToStorage } from "@/lib/utils";
+import { createPartRequest } from "@/lib/actions/partRequestActions";
 
 interface RequestPartDialogProps {
   vehicle: VehicleYard | null;
@@ -94,23 +96,17 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
       dispatch({ type: "SUBMIT_START" });
 
       try {
-        const res = await fetch("/api/part-requests", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            vehicleId: vehicle.id,
-            vehicleName: `${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.trim})`,
-            partsNeeded: values.partsNeeded.trim(),
-            name: values.customerName.trim(),
-            phone: values.customerPhone.trim(),
-          }),
+        const partRequest = await createPartRequest({
+          vehicleId: vehicle.id,
+          vehicleName: `${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.trim})`,
+          partsNeeded: values.partsNeeded.trim(),
+          name: values.customerName.trim(),
+          phone: values.customerPhone.trim(),
+          status: "Pending_Search" as PartRequestStatus
         });
 
-        if (!res.ok) throw new Error("Could not execute request at this time.");
-
-        const payload = await res.json();
-        appendIdToStorage("rrs_my_part_ids", payload.requestId);
-        dispatch({ type: "SUBMIT_SUCCESS", requestId: payload.requestId });
+        appendIdToStorage("rrs_my_part_ids", partRequest.id);
+        dispatch({ type: "SUBMIT_SUCCESS", requestId: partRequest.id });
         onQuoteAdded();
       } catch (err: unknown) {
         dispatch({

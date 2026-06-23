@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
+
 import { RefreshCw, AlertCircle, Clock, Search } from "lucide-react";
+
+import { getAllPartRequests, getAllScrapValuations } from "@/lib/actions";
+import type { PartRequest as PrismaPartRequest, ScrapValuation as PrismaScrapValuation } from "@prisma/client";
 
 interface PartQuoteRequest {
   requestId: string;
@@ -21,12 +25,6 @@ interface ScrapValuation {
   status?: string;
   notes?: string;
   timestamp: string;
-}
-
-interface SubmissionsResponse {
-  partQuotes?: PartQuoteRequest[];
-  scrapQuotations?: ScrapValuation[];
-  scrapQuotetions?: ScrapValuation[]; // tolerate legacy/typo'd API field name
 }
 
 type LookupMessage = { type: "success" | "error"; text: string } | null;
@@ -61,6 +59,30 @@ function addStoredId(key: string, id: string): string[] {
   }
 }
 
+// Helper to convert Prisma types to our component types
+function convertPartRequest(prismaPart: PrismaPartRequest): PartQuoteRequest {
+  return {
+    requestId: prismaPart.id,
+    vehicleName: prismaPart.vehicleName,
+    partsNeeded: prismaPart.partsNeeded,
+    status: prismaPart.status.replace("_", " "),
+    notes: prismaPart.notes ?? undefined,
+    timestamp: prismaPart.createdAt.toISOString()
+  };
+}
+
+function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValuation {
+  return {
+    id: prismaValuation.id,
+    vehicleName: prismaValuation.vehicleName,
+    registration: prismaValuation.registration,
+    estimatedValue: prismaValuation.estimatedValue,
+    status: prismaValuation.status,
+    notes: prismaValuation.notes ?? undefined,
+    timestamp: prismaValuation.createdAt.toISOString()
+  };
+}
+
 export default function MyRequestsView() {
   const [partQuotes, setPartQuotes] = useState<PartQuoteRequest[]>([]);
   const [scrapValuations, setScrapValuations] = useState<ScrapValuation[]>([]);
@@ -70,41 +92,33 @@ export default function MyRequestsView() {
   const [lookupId, setLookupId] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupMessage, setLookupMessage] = useState<LookupMessage>(null);
+  const isFirstRenderRef = useRef(true);
 
-  // Tracks the in-flight request so we can cancel it if a newer one starts
-  // or the component unmounts — prevents race conditions and state updates
-  // on an unmounted component.
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const fetchSubmissions = useCallback(async () => {
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
+  const fetchSubmissions = async () => {
     setLoading(true);
     setFetchError(null);
 
     try {
-      const res = await fetch("/api/my-submissions", { signal: controller.signal });
-      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
-      const data: SubmissionsResponse = await res.json();
+      const [prismaPartRequests, prismaScrapValuations] = await Promise.all([
+        getAllPartRequests(),
+        getAllScrapValuations()
+      ]);
 
       const myScrapIds = getStoredIds(SCRAP_IDS_KEY);
       const myPartIds = getStoredIds(PART_IDS_KEY);
 
-      const allParts = data.partQuotes ?? [];
-      const allScrap = data.scrapQuotations ?? data.scrapQuotetions ?? [];
+      const allParts = prismaPartRequests.map(convertPartRequest);
+      const allScrap = prismaScrapValuations.map(convertScrapValuation);
 
       setPartQuotes(allParts.filter((p) => myPartIds.includes(p.requestId)));
       setScrapValuations(allScrap.filter((s) => myScrapIds.includes(s.id)));
     } catch (err) {
-      if ((err as Error).name === "AbortError") return; // expected — superseded or unmounted
       console.error("Inquiries fetch went wrong:", err);
-      setFetchError("Couldn't load your requests right now. Please try again.");
+      setFetchError("Could not load your requests right now. Please try again.");
     } finally {
-      if (!controller.signal.aborted) setLoading(false);
+      setLoading(false);
     }
-  }, []);
+  };
 
   const handleLookup = async (e: FormEvent) => {
     e.preventDefault();
@@ -115,12 +129,13 @@ export default function MyRequestsView() {
     setLookupLoading(true);
 
     try {
-      const res = await fetch("/api/my-submissions");
-      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
-      const data: SubmissionsResponse = await res.json();
+      const [prismaPartRequests, prismaScrapValuations] = await Promise.all([
+        getAllPartRequests(),
+        getAllScrapValuations()
+      ]);
 
-      const allParts = data.partQuotes ?? [];
-      const allScrap = data.scrapQuotations ?? data.scrapQuotetions ?? [];
+      const allParts = prismaPartRequests.map(convertPartRequest);
+      const allScrap = prismaScrapValuations.map(convertScrapValuation);
 
       const foundPart = allParts.find((p) => p.requestId?.toUpperCase() === searchId);
       const foundScrap = allScrap.find((s) => s.id?.toUpperCase() === searchId);
@@ -147,11 +162,11 @@ export default function MyRequestsView() {
   };
 
   useEffect(() => {
-    // real data here
-    // fetchSubmissions();
-    // Cancel any in-flight request on unmount.
-    return () => abortControllerRef.current?.abort();
-  }, [fetchSubmissions]);
+    if (isFirstRenderRef.current) {
+      fetchSubmissions();
+      isFirstRenderRef.current = false;
+    }
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },

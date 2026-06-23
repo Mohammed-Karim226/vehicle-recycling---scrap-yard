@@ -5,20 +5,54 @@ import { motion, AnimatePresence, Variants } from "motion/react";
 
 import { TrendingUp, TrendingDown, RefreshCw, Send, CheckCircle2 } from "lucide-react";
 import { mockScrapPrices } from "@/lib/mockData";
+import { getAllScrapMetalPrices } from "@/lib/actions";
+import type { ScrapMetalPrice as PrismaScrapMetalPrice } from "@prisma/client";
+import type { ScrapMetalPrice } from "@/types/types";
+
+// Helper to convert Prisma ScrapMetalPrice to app type
+function convertPrismaPrice(prismaPrice: PrismaScrapMetalPrice): ScrapMetalPrice {
+  return {
+    id: prismaPrice.id,
+    category: prismaPrice.category,
+    pricePerKgMin: prismaPrice.pricePerKgMin,
+    pricePerKgMax: prismaPrice.pricePerKgMax,
+    trend: prismaPrice.trend.replace("_", " ") as "Rising" | "Stable" | "Falling"
+  };
+}
 
 export default function ScrapPricesView() {
-  const [prices, setPrices] = useState(mockScrapPrices);
+  const [prices, setPrices] = useState<ScrapMetalPrice[]>(mockScrapPrices);
+  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [serialNumber, setSerialNumber] = useState("");
   const [submittedSerial, setSubmittedSerial] = useState(false);
+  const isFirstRenderRef = useRef(true);
 
   // Track in-flight timeouts so we can cancel them if the component unmounts
   // or if the user fires a new action before the previous one resolves.
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup on unmount: prevents "state update on unmounted component" leaks.
+  // Fetch prices from DB on mount
   useEffect(() => {
+    if (isFirstRenderRef.current) {
+      async function fetchPrices() {
+        try {
+          const prismaPrices = await getAllScrapMetalPrices();
+          if (prismaPrices.length > 0) {
+            setPrices(prismaPrices.map(convertPrismaPrice));
+          }
+        } catch (err) {
+          console.error("Failed to fetch prices", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchPrices();
+      isFirstRenderRef.current = false;
+    }
+
+    // Cleanup timeouts
     return () => {
       if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
       if (submitTimeoutRef.current) clearTimeout(submitTimeoutRef.current);

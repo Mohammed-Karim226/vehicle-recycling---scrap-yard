@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import Header from "./Header";
 import Footer from "./Footer";
@@ -12,26 +12,33 @@ import ScrapPricesView from "./ScrapPricesView";
 import AboutContactView from "./AboutContactView";
 import MyRequestsView from "./MyRequestsView";
 import AdminDashboardView from "./admin/AdminDashboardView";
+import { getAllPartRequests, getAllScrapValuations } from "@/lib/actions";
 
 const HomePage = () => {
   const [currentTab, setCurrentTab] = useState<string>("home");
   const [requestCount, setRequestCount] = useState(0);
+  const isFirstRenderRef = useRef(true);
 
-  // Sync request count from full-stack DB
+  // Sync request count from DB
   const updateRequestCount = async () => {
     try {
-      // Fetch the count of part quotes and scrap quotations from the backend API
-      const res = await fetch("/api/my-submissions");
-      if (res.ok) {
-        const data = await res.json();
-        const total =
-          (data.partQuotes?.length || 0) + (data.scrapQuotetions?.length || 0);
-        setRequestCount(total);
-      }
+      const [partRequests, scrapValuations] = await Promise.all([
+        getAllPartRequests(),
+        getAllScrapValuations()
+      ]);
+      const total = partRequests.length + scrapValuations.length;
+      setRequestCount(total);
     } catch (e) {
       console.warn("Could not sync requests count", e);
     }
   };
+
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      updateRequestCount();
+      isFirstRenderRef.current = false;
+    }
+  }, []);
   const handleQuoteAdded = () => {
     updateRequestCount();
   };
