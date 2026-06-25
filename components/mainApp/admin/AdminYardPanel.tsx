@@ -2,10 +2,18 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
 import { motion } from "motion/react";
-import { Search, Sliders, Trash2, Plus, RefreshCw } from "lucide-react";
+import { Search, Sliders, Trash2, Plus, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
 import type { VehicleYard } from "@/types/types";
 import type { NewVehicleFormData } from "./useAdminData";
 import { INITIAL_VEHICLE_FORM } from "./useAdminData";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ────────────────────────────────────────────────────────────
 // Props
@@ -35,8 +43,8 @@ const VehicleCard = memo(function VehicleCard({
   onDelete,
 }: VehicleCardProps) {
   const handleStatusChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      onStatusChange(vehicle.id, e.target.value);
+    (value: string) => {
+      onStatusChange(vehicle.id, value);
     },
     [vehicle.id, onStatusChange]
   );
@@ -77,16 +85,18 @@ const VehicleCard = memo(function VehicleCard({
       <div className="px-4 pb-4 pt-2 border-t border-white/[0.03] bg-black/20 flex items-center justify-between gap-2">
         <div className="flex items-center space-x-1">
           <Sliders className="h-3 w-3 text-slate-500" />
-          <select
-            value={vehicle.status}
-            onChange={handleStatusChange}
-            className="bg-slate-950 text-[10px] text-slate-300 font-mono border border-white/5 px-2 py-1 rounded"
-          >
-            <option value="In Yard">In Yard</option>
-            <option value="Dismantled">Dismantled</option>
-            <option value="Scrapped">Scrapped</option>
-          </select>
+          <Select value={vehicle.status} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-full bg-slate-950 text-xs text-slate-300 font-mono border border-white/5 rounded-lg h-9">
+              <SelectValue placeholder="Select Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-950 border border-white/10 text-slate-300 font-mono text-xs shadow-xl mt-12 cursor-pointer">
+              <SelectItem value="In Yard">In Yard</SelectItem>
+              <SelectItem value="Dismantled">Dismantled</SelectItem>
+              <SelectItem value="Scrapped">Scrapped</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+        
 
         <button
           onClick={handleDelete}
@@ -218,27 +228,108 @@ const AddVehicleForm = memo(function AddVehicleForm({
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] text-slate-500 font-mono uppercase">Arrived Date *</label>
-          <input
-            type="text"
-            required
-            value={formData.arrivedDate}
-            onChange={(e) => updateField("arrivedDate", e.target.value)}
-            placeholder="e.g. Jun 18, 2026"
-            className="w-full bg-slate-900 border border-white/5 rounded-lg px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-red-500"
-          />
+          <label className="text-[10px] text-slate-500 font-mono uppercase block">Arrived Date *</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="w-full flex items-center justify-between bg-slate-900 border border-white/5 rounded-lg px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none text-left cursor-pointer hover:border-white/10 transition-colors"
+              >
+                <span>{formData.arrivedDate || "Select Date"}</span>
+                <CalendarIcon className="h-4 w-4 text-slate-400" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-3.5 bg-slate-950 border border-white/10 text-white rounded-xl shadow-2xl z-50">
+              <div className="space-y-2">
+                <span className="text-[9px] text-slate-500 font-mono uppercase block">Select Arrival Date</span>
+                <input
+                  type="date"
+                  value={
+                    formData.arrivedDate
+                      ? (() => {
+                          let date = new Date(formData.arrivedDate);
+                          if (isNaN(date.getTime())) {
+                            const parts = formData.arrivedDate.split(" ");
+                            if (parts.length === 3) {
+                              const day = parseInt(parts[0]);
+                              const monthStr = parts[1];
+                              const year = parseInt(parts[2]);
+                              const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                              const month = months.findIndex(m => m.toLowerCase().startsWith(monthStr.toLowerCase()));
+                              if (month !== -1) {
+                                date = new Date(year, month, day);
+                              }
+                            }
+                          }
+                          return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+                        })()
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val) {
+                      const date = new Date(val);
+                      const formatted = date.toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      });
+                      updateField("arrivedDate", formatted);
+                    }
+                  }}
+                  className="bg-slate-900 text-xs text-white font-mono border border-white/10 rounded-lg px-3 py-2 w-full focus:outline-none focus:border-red-500 scheme-dark"
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-[10px] text-slate-500 font-mono uppercase">
-            Donor Stock Image URL
+        <div className="space-y-2">
+          <label className="text-[10px] text-slate-500 font-mono uppercase block">
+            Donor Stock Image
           </label>
-          <input
-            type="text"
-            value={formData.image}
-            onChange={(e) => updateField("image", e.target.value)}
-            className="w-full bg-slate-900 border border-white/5 rounded-lg px-3.5 py-2.5 text-[10px] text-slate-300 font-mono focus:outline-none focus:border-red-500"
-          />
+          <div className="flex flex-col gap-2.5 bg-slate-900 border border-white/5 rounded-lg p-3.5">
+            <div className="space-y-1">
+              <span className="text-[9px] text-slate-500 font-mono uppercase block">Upload File</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      updateField("image", reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="w-full text-xs text-slate-400 font-mono file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:font-mono file:uppercase file:bg-red-600 file:text-white file:cursor-pointer hover:file:opacity-90 transition-all"
+              />
+            </div>
+            <div className="text-[9px] text-slate-600 font-mono text-center font-bold">— OR —</div>
+            <div className="space-y-1">
+              <span className="text-[9px] text-slate-500 font-mono uppercase block">Paste Image URL</span>
+              <input
+                type="text"
+                value={formData.image.startsWith("data:") ? "" : formData.image}
+                onChange={(e) => updateField("image", e.target.value)}
+                placeholder="https://images.unsplash.com/..."
+                className="w-full bg-slate-950 border border-white/5 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-300 font-mono focus:outline-none focus:border-red-500"
+              />
+            </div>
+            {formData.image && (
+              <div className="mt-1 flex items-center gap-2">
+                <img
+                  src={formData.image}
+                  alt="Preview"
+                  referrerPolicy="no-referrer"
+                  className="h-8 w-10 object-cover rounded border border-white/10"
+                />
+                <span className="text-[8px] text-emerald-400 font-mono">Image loaded</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {showSuccess && (

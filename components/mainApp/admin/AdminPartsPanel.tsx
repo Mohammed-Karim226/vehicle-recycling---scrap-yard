@@ -3,6 +3,13 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Search, Save, RefreshCw, Phone, Trash2 } from "lucide-react";
 import type { PartQuoteSubmitted } from "@/types/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ────────────────────────────────────────────────────────────
 // Props
@@ -126,17 +133,18 @@ const PartRequestRowCard = memo(function PartRequestRowCard({
             <label className="text-[9px] text-slate-500 font-mono uppercase block text-left md:text-right">
               Work Queue Status
             </label>
-            <select
-              value={status}
-              onChange={handleStatusChange}
-              className="bg-slate-950 text-xs text-slate-300 font-mono border border-white/5 px-2.5 py-1.5 rounded-lg w-full focus:outline-none focus:border-red-500/50 transition-colors"
-            >
-              <option value="Pending Search">Pending Search</option>
-              <option value="Part Located">Part Located</option>
-              <option value="Shipped">Shipped</option>
-              <option value="No Stock">No Stock</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
+            <Select value={status} onValueChange={(val) => { setStatus(val); setDirty(true); }}>
+              <SelectTrigger className="w-full bg-slate-950 text-xs text-slate-300 font-mono border border-white/5 rounded-lg h-9">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-950 border border-white/10 text-slate-300 font-mono text-xs shadow-xl mt-12">
+                <SelectItem value="Pending Search">Pending Search</SelectItem>
+                <SelectItem value="Part Located">Part Located</SelectItem>
+                <SelectItem value="Shipped">Shipped</SelectItem>
+                <SelectItem value="No Stock">No Stock</SelectItem>
+                <SelectItem value="Cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {isModified && (
