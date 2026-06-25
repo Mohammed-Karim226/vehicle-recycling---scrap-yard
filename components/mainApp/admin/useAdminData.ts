@@ -34,6 +34,15 @@ function convertVehicleYard(prismaVehicle: PrismaVehicleYard): VehicleYard {
 }
 
 function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValuationResult {
+  let mappedStatus = "Pending Inspection";
+  if (prismaValuation.status === "Completed") {
+    mappedStatus = "Collected";
+  } else if (prismaValuation.status === "Rejected") {
+    mappedStatus = "Cancelled";
+  } else if (prismaValuation.status === "Pending") {
+    mappedStatus = "Pending Inspection";
+  }
+
   return {
     id: prismaValuation.id,
     registration: prismaValuation.registration,
@@ -43,7 +52,7 @@ function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValu
     weightKg: prismaValuation.weightKg,
     engineSize: prismaValuation.engineSize,
     fuelType: prismaValuation.fuelType,
-    status: prismaValuation.status,
+    status: mappedStatus,
     notes: prismaValuation.notes ?? undefined
   };
 }
@@ -71,7 +80,16 @@ function appToPrismaPartRequestStatus(status: string): PartRequestStatus {
 }
 
 function appToPrismaScrapQuoteStatus(status: string): ScrapQuoteStatus {
-  return status as ScrapQuoteStatus;
+  switch (status) {
+    case "Pending Inspection":
+      return "Pending";
+    case "Collected":
+      return "Completed";
+    case "Cancelled":
+      return "Rejected";
+    default:
+      return "Pending";
+  }
 }
 
 // ────────────────────────────────────────────────────────────

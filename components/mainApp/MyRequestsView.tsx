@@ -72,12 +72,21 @@ function convertPartRequest(prismaPart: PrismaPartRequest): PartQuoteRequest {
 }
 
 function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValuation {
+  let mappedStatus = "Pending Collection";
+  if (prismaValuation.status === "Completed") {
+    mappedStatus = "Collected";
+  } else if (prismaValuation.status === "Rejected") {
+    mappedStatus = "Cancelled";
+  } else if (prismaValuation.status === "Pending") {
+    mappedStatus = "Pending Collection";
+  }
+
   return {
     id: prismaValuation.id,
     vehicleName: prismaValuation.vehicleName,
     registration: prismaValuation.registration,
     estimatedValue: prismaValuation.estimatedValue,
-    status: prismaValuation.status,
+    status: mappedStatus,
     notes: prismaValuation.notes ?? undefined,
     timestamp: prismaValuation.createdAt.toISOString()
   };
