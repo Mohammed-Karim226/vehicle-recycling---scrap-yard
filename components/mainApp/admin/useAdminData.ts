@@ -11,11 +11,13 @@ import {
 } from "@/lib/actions/vehicleYardActions";
 import { 
   getAllScrapValuations, 
-  updateScrapValuation 
+  updateScrapValuation,
+  deleteScrapValuation
 } from "@/lib/actions/scrapValuationActions";
 import { 
   getAllPartRequests, 
-  updatePartRequest 
+  updatePartRequest,
+  deletePartRequest
 } from "@/lib/actions/partRequestActions";
 
 // Helper functions to convert Prisma types to app types
@@ -141,6 +143,8 @@ export interface UseAdminDataReturn {
   handleUpdatePartStatus: (requestId: string, status: string, notes: string) => Promise<void>;
   handleUpdateYardStatus: (vehicleId: string, status: string) => Promise<void>;
   handleDeleteYardVehicle: (vehicleId: string) => Promise<boolean>;
+  handleDeleteScrapQuote: (quoteId: string) => Promise<boolean>;
+  handleDeletePartRequest: (requestId: string) => Promise<boolean>;
   handleAddYardVehicle: (formData: NewVehicleFormData) => Promise<boolean>;
   clearError: () => void;
 }
@@ -287,6 +291,44 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     [onRefreshTrigger]
   );
 
+  // ── Delete scrap quote ──
+  const handleDeleteScrapQuote = useCallback(
+    async (quoteId: string): Promise<boolean> => {
+      setActionLoading(`del-scrap-${quoteId}`);
+      try {
+        await deleteScrapValuation(quoteId);
+        setScrapQuotes((prev) => prev.filter((q) => q.id !== quoteId));
+        onRefreshTrigger?.();
+        return true;
+      } catch {
+        setError("Failed to delete scrap quote.");
+        return false;
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [onRefreshTrigger]
+  );
+
+  // ── Delete part request ──
+  const handleDeletePartRequest = useCallback(
+    async (requestId: string): Promise<boolean> => {
+      setActionLoading(`del-part-${requestId}`);
+      try {
+        await deletePartRequest(requestId);
+        setPartRequests((prev) => prev.filter((p) => p.requestId !== requestId));
+        onRefreshTrigger?.();
+        return true;
+      } catch {
+        setError("Failed to delete part request.");
+        return false;
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [onRefreshTrigger]
+  );
+
   return {
     vehicles,
     scrapQuotes,
@@ -299,6 +341,8 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     handleUpdatePartStatus,
     handleUpdateYardStatus,
     handleDeleteYardVehicle,
+    handleDeleteScrapQuote,
+    handleDeletePartRequest,
     handleAddYardVehicle,
     clearError,
   };

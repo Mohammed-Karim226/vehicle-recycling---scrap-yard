@@ -11,9 +11,27 @@ export class PartRequestRepository {
   }
 
   async findAll(): Promise<PartRequest[]> {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    try {
+      await prisma.partRequest.deleteMany({
+        where: {
+          status: {
+            in: ['No_Stock', 'Cancelled']
+          },
+          updatedAt: {
+            lt: threeDaysAgo
+          }
+        }
+      });
+    } catch (err) {
+      console.error("Error doing auto-cleanup of part requests:", err);
+    }
+
     return prisma.partRequest.findMany({
       orderBy: { createdAt: 'desc' }
-    })
+    });
   }
 
   async update(id: string, data: Prisma.PartRequestUpdateInput): Promise<PartRequest> {

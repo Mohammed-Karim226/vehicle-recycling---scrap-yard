@@ -398,6 +398,16 @@ export default function MyRequestsView() {
                       </div>
                     )}
 
+                    {req.status === "No Stock" && (
+                      <div className="bg-rose-950/20 p-3.5 rounded-xl border border-rose-900/30 text-[11px] text-rose-300 flex items-start gap-2.5">
+                        <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <span className="font-bold font-mono uppercase block text-[9px] text-rose-400 tracking-wider">Part Request Expired / Not Found</span>
+                          <p className="leading-relaxed">Unfortunately, we could not locate this part in our breaker yard stock. This request will be automatically removed from our secure cloud index within 3 days.</p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="pt-3.5 border-t border-white/5 flex flex-wrap justify-between items-center text-[10px] text-slate-500 font-mono gap-2">
                       <div className="flex items-center space-x-1.5">
                         <Clock className="h-3 w-3 inline" />

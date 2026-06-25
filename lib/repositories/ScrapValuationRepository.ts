@@ -11,9 +11,25 @@ export class ScrapValuationRepository {
   }
 
   async findAll(): Promise<ScrapValuation[]> {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    try {
+      await prisma.scrapValuation.deleteMany({
+        where: {
+          status: 'Rejected',
+          updatedAt: {
+            lt: threeDaysAgo
+          }
+        }
+      });
+    } catch (err) {
+      console.error("Error doing auto-cleanup of scrap valuations:", err);
+    }
+
     return prisma.scrapValuation.findMany({
       orderBy: { createdAt: 'desc' }
-    })
+    });
   }
 
   async update(id: string, data: Prisma.ScrapValuationUpdateInput): Promise<ScrapValuation> {
