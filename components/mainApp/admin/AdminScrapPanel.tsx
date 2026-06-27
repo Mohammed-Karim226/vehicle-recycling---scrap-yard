@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
+import React, { useState, useMemo, useCallback, memo } from "react";
 import { Search, Save, RefreshCw, Trash2 } from "lucide-react";
 import type { ScrapValuationResult } from "@/types/types";
 import {
@@ -41,19 +41,8 @@ const QuoteRowCard = memo(function QuoteRowCard({
   const [status, setStatus] = useState(quote.status || "Pending Inspection");
   const [dirty, setDirty] = useState(false);
 
-  useEffect(() => {
-    setNotes(quote.notes || "");
-    setStatus(quote.status || "Pending Inspection");
-    setDirty(false);
-  }, [quote.notes, quote.status]);
-
   const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNotes(e.target.value);
-    setDirty(true);
-  }, []);
-
-  const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatus(e.target.value);
     setDirty(true);
   }, []);
 
@@ -236,7 +225,7 @@ function AdminScrapPanelInner({
         <div className="space-y-4">
           {filteredQuotes.map((quote) => (
             <QuoteRowCard
-              key={quote.id}
+              key={`${quote.id}-${quote.status}-${quote.notes ?? ""}`}
               quote={quote}
               actionLoading={actionLoading}
               onUpdate={onUpdateStatus}

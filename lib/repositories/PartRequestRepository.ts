@@ -10,6 +10,18 @@ export class PartRequestRepository {
     return prisma.partRequest.findUnique({ where: { id } })
   }
 
+  async findByIds(ids: string[]): Promise<PartRequest[]> {
+    if (ids.length === 0) return []
+    return prisma.partRequest.findMany({
+      where: { id: { in: ids } },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
+  async countAll(): Promise<number> {
+    return prisma.partRequest.count()
+  }
+
   async findAll(): Promise<PartRequest[]> {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);

@@ -16,6 +16,14 @@ export class ScrapValuationService {
     return this.repository.findById(id)
   }
 
+  async getValuationsByIds(ids: string[]): Promise<ScrapValuation[]> {
+    return this.repository.findByIds(ids)
+  }
+
+  async getValuationCount(): Promise<number> {
+    return this.repository.countAll()
+  }
+
   async getAllValuations(): Promise<ScrapValuation[]> {
     return this.repository.findAll()
   }

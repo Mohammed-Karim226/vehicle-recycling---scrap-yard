@@ -12,7 +12,7 @@ import ScrapPricesView from "./ScrapPricesView";
 import AboutContactView from "./AboutContactView";
 import MyRequestsView from "./MyRequestsView";
 import AdminDashboardView from "./admin/AdminDashboardView";
-import { getAllPartRequests, getAllScrapValuations } from "@/lib/actions";
+import { getSubmissionCounts } from "@/lib/actions";
 
 const HomePage = () => {
   const [currentTab, setCurrentTab] = useState<string>("home");
@@ -22,12 +22,8 @@ const HomePage = () => {
   // Sync request count from DB
   const updateRequestCount = async () => {
     try {
-      const [partRequests, scrapValuations] = await Promise.all([
-        getAllPartRequests(),
-        getAllScrapValuations()
-      ]);
-      const total = partRequests.length + scrapValuations.length;
-      setRequestCount(total);
+      const counts = await getSubmissionCounts();
+      setRequestCount(counts.total);
     } catch (e) {
       console.warn("Could not sync requests count", e);
     }

@@ -16,6 +16,14 @@ export class PartRequestService {
     return this.repository.findById(id)
   }
 
+  async getRequestsByIds(ids: string[]): Promise<PartRequest[]> {
+    return this.repository.findByIds(ids)
+  }
+
+  async getRequestCount(): Promise<number> {
+    return this.repository.countAll()
+  }
+
   async getAllRequests(): Promise<PartRequest[]> {
     return this.repository.findAll()
   }

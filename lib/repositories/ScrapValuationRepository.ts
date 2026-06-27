@@ -10,6 +10,18 @@ export class ScrapValuationRepository {
     return prisma.scrapValuation.findUnique({ where: { id } })
   }
 
+  async findByIds(ids: string[]): Promise<ScrapValuation[]> {
+    if (ids.length === 0) return []
+    return prisma.scrapValuation.findMany({
+      where: { id: { in: ids } },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
+  async countAll(): Promise<number> {
+    return prisma.scrapValuation.count()
+  }
+
   async findAll(): Promise<ScrapValuation[]> {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);

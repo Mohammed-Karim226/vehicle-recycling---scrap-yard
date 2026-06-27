@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
+import React, { useState, useMemo, useCallback, memo } from "react";
 import { Search, Save, RefreshCw, Phone, Trash2 } from "lucide-react";
 import type { PartQuoteSubmitted } from "@/types/types";
 import {
@@ -41,19 +41,8 @@ const PartRequestRowCard = memo(function PartRequestRowCard({
   const [status, setStatus] = useState<string>(req.status || "Pending Search");
   const [dirty, setDirty] = useState(false);
 
-  useEffect(() => {
-    setNotes(req.notes || "");
-    setStatus(req.status || "Pending Search");
-    setDirty(false);
-  }, [req.notes, req.status]);
-
   const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNotes(e.target.value);
-    setDirty(true);
-  }, []);
-
-  const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatus(e.target.value);
     setDirty(true);
   }, []);
 
@@ -253,7 +242,7 @@ function AdminPartsPanelInner({
         <div className="space-y-4">
           {filteredParts.map((req) => (
             <PartRequestRowCard
-              key={req.requestId}
+              key={`${req.requestId}-${req.status}-${req.notes ?? ""}`}
               req={req}
               actionLoading={actionLoading}
               onUpdate={onUpdateStatus}
