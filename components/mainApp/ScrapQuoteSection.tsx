@@ -5,13 +5,14 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "motion/react";
-import { Car, MapPin, Sparkles, Scale, Info, CheckCircle2, RotateCcw, ArrowRight, Loader2, Phone } from "lucide-react";
+import { Car, MapPin, Sparkles, Scale, Info, CheckCircle2, RotateCcw, ArrowRight, Loader2, Phone, MessageCircle } from "lucide-react";
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ScrapValuationResult } from "@/types/types";
 import { generateScrapValuation } from "@/lib/actions/scrapValuationActions";
 import { createPartRequest } from "@/lib/actions/partRequestActions";
+import { buildWhatsAppLink, buildScrapQuoteMessage } from "@/lib/whatsapp";
 
 interface ScrapQuoteSectionProps {
   onQuoteAdded: () => void;
@@ -176,6 +177,8 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = false }
           name: "Scrap Customer",
           phone: values.contactInfo.trim(),
           status: "Pending_Search"
+        }, {
+          valuationData: valuation,
         });
         
         if (!isMountedRef.current) return;
@@ -435,6 +438,21 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = false }
                   )}
 
                   <div className="flex flex-col sm:flex-row gap-3">
+                    {valuation && (
+                      <a
+                        href={buildWhatsAppLink({
+                          recipientPhone: process.env.NEXT_PUBLIC_RECIPIENT_WHATSAPP || "07309580006",
+                          message: buildScrapQuoteMessage(valuation),
+                        })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 active:scale-[0.98] text-white font-extrabold uppercase py-3.5 px-5 rounded-lg text-xs font-mono tracking-wider transition-all text-center flex items-center justify-center space-x-2 cursor-pointer border border-white/10 shadow-lg shadow-green-500/10"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        <span>Send Quote via WhatsApp</span>
+                      </a>
+                    )}
+
                     <button
                       type="submit"
                       disabled={confirmSubmitting}

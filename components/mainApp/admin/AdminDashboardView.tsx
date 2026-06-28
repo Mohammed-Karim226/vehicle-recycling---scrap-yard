@@ -217,6 +217,7 @@ export default function AdminDashboardView({ onRefreshTrigger }: AdminDashboardV
                 scrapQuotes={data.scrapQuotes}
                 actionLoading={data.actionLoading}
                 onUpdateStatus={data.handleUpdateScrapStatus}
+                onDelete={data.handleDeleteScrapQuote}
               />
             </motion.div>
           )}
@@ -232,6 +233,7 @@ export default function AdminDashboardView({ onRefreshTrigger }: AdminDashboardV
                 partRequests={data.partRequests}
                 actionLoading={data.actionLoading}
                 onUpdateStatus={data.handleUpdatePartStatus}
+                onDelete={data.handleDeletePartRequest}
               />
             </motion.div>
           )}

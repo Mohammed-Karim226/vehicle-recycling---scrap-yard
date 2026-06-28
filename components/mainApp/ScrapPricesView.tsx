@@ -23,6 +23,8 @@ function convertPrismaPrice(prismaPrice: PrismaScrapMetalPrice): ScrapMetalPrice
 export default function ScrapPricesView() {
   const [prices, setPrices] = useState<ScrapMetalPrice[]>(mockScrapPrices);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [serialNumber, setSerialNumber] = useState("");
   const [submittedSerial, setSubmittedSerial] = useState(false);
@@ -41,9 +43,14 @@ export default function ScrapPricesView() {
           const prismaPrices = await getAllScrapMetalPrices();
           if (prismaPrices.length > 0) {
             setPrices(prismaPrices.map(convertPrismaPrice));
+            setUsingFallback(false);
+          } else {
+            setUsingFallback(true);
           }
         } catch (err) {
           console.error("Failed to fetch prices", err);
+          setFetchError(true);
+          setUsingFallback(true);
         } finally {
           setLoading(false);
         }
@@ -132,9 +139,25 @@ export default function ScrapPricesView() {
         <div className="bg-slate-950/70 backdrop-blur-3xl p-6 sm:p-8 rounded-[15px] relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center space-x-2.5">
-              <span className="bg-emerald-950/85 text-emerald-400 font-mono text-[9px] font-bold px-2.5 py-1 rounded-full border border-emerald-900/40 flex items-center space-x-1.5 uppercase">
-                <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-ping"></span>
-                <span>Live Prices Active</span>
+              <span className={`font-mono text-[9px] font-bold px-2.5 py-1 rounded-full border flex items-center space-x-1.5 uppercase ${
+                fetchError
+                  ? "bg-amber-950/85 text-amber-400 border-amber-900/40"
+                  : usingFallback
+                    ? "bg-slate-900/85 text-slate-400 border-white/10"
+                    : "bg-emerald-950/85 text-emerald-400 border-emerald-900/40"
+              }`}>
+                {!fetchError && !usingFallback && (
+                  <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-ping"></span>
+                )}
+                <span>
+                  {loading
+                    ? "Loading prices..."
+                    : fetchError
+                      ? "Offline — sample rates"
+                      : usingFallback
+                        ? "Demo rates"
+                        : "Live Prices Active"}
+                </span>
               </span>
               <span className="text-slate-500 font-mono text-[10px] uppercase font-semibold">
                 LME Spot Index Matched

@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RequestPartDialog } from "./RequestPartDialog";
-import { getAllVehicleYards, createVehicleYard } from "@/lib/actions/vehicleYardActions";
+import { getAllVehicleYards } from "@/lib/actions/vehicleYardActions";
 import { createPartRequest } from "@/lib/actions/partRequestActions";
 
 interface FindPartsViewProps {

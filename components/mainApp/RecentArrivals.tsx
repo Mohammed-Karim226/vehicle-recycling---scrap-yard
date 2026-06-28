@@ -25,14 +25,23 @@ function convertPrismaVehicle(prismaVehicle: PrismaVehicleYard): VehicleYard {
 const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) => {
   const [vehicles, setVehicles] = useState<VehicleYard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     async function fetchVehicles() {
       try {
         const prismaVehicles = await getAllVehicleYards();
-        setVehicles(prismaVehicles.map(convertPrismaVehicle));
+        if (prismaVehicles.length > 0) {
+          setVehicles(prismaVehicles.map(convertPrismaVehicle));
+          setUsingFallback(false);
+        } else {
+          setUsingFallback(true);
+        }
       } catch (e) {
         console.error("Failed to fetch vehicles", e);
+        setFetchError(true);
+        setUsingFallback(true);
       } finally {
         setLoading(false);
       }
@@ -48,13 +57,20 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
   ];
 
   const displayVehicles = vehicles.length > 0 ? vehicles.slice(0, 3) : placeholderVehicles;
+  const statusLabel = fetchError
+    ? "Offline — showing sample stock"
+    : usingFallback
+      ? "Demo preview"
+      : "Updated: Live";
 
   return (
     <div className="space-y-6 pt-4">
       <div className="flex justify-between items-end">
         <div className="space-y-1.5 flex flex-col items-start text-left">
-          <span className="text-[9px] text-red-450 font-mono font-bold uppercase tracking-widest block bg-white/[0.02] border border-white/5 rounded-full px-2.5 py-0.5">
-            Updated: Live
+          <span className={`text-[9px] font-mono font-bold uppercase tracking-widest block bg-white/[0.02] border border-white/5 rounded-full px-2.5 py-0.5 ${
+            fetchError ? "text-amber-400" : usingFallback ? "text-slate-400" : "text-red-450"
+          }`}>
+            {loading ? "Loading..." : statusLabel}
           </span>
           <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
             RECENT ARRIVALS

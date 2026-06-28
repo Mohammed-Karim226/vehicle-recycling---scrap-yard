@@ -1,8 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { Search, Save, RefreshCw, Phone } from "lucide-react";
+import React, { useState, useMemo, useCallback, memo } from "react";
+import { Search, Save, RefreshCw, Phone, Trash2 } from "lucide-react";
 import type { PartQuoteSubmitted } from "@/types/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ────────────────────────────────────────────────────────────
 // Props
@@ -11,6 +18,7 @@ interface AdminPartsPanelProps {
   partRequests: PartQuoteSubmitted[];
   actionLoading: string | null;
   onUpdateStatus: (requestId: string, status: string, notes: string) => Promise<void>;
+  onDelete?: (requestId: string) => Promise<boolean>;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -20,30 +28,21 @@ interface PartRequestRowCardProps {
   req: PartQuoteSubmitted;
   actionLoading: string | null;
   onUpdate: (requestId: string, status: string, notes: string) => Promise<void>;
+  onDelete?: (requestId: string) => Promise<boolean>;
 }
 
 const PartRequestRowCard = memo(function PartRequestRowCard({
   req,
   actionLoading,
   onUpdate,
+  onDelete,
 }: PartRequestRowCardProps) {
   const [notes, setNotes] = useState(req.notes || "");
   const [status, setStatus] = useState<string>(req.status || "Pending Search");
   const [dirty, setDirty] = useState(false);
 
-  useEffect(() => {
-    setNotes(req.notes || "");
-    setStatus(req.status || "Pending Search");
-    setDirty(false);
-  }, [req.notes, req.status]);
-
   const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNotes(e.target.value);
-    setDirty(true);
-  }, []);
-
-  const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatus(e.target.value);
     setDirty(true);
   }, []);
 
@@ -123,17 +122,18 @@ const PartRequestRowCard = memo(function PartRequestRowCard({
             <label className="text-[9px] text-slate-500 font-mono uppercase block text-left md:text-right">
               Work Queue Status
             </label>
-            <select
-              value={status}
-              onChange={handleStatusChange}
-              className="bg-slate-950 text-xs text-slate-300 font-mono border border-white/5 px-2.5 py-1.5 rounded-lg w-full focus:outline-none focus:border-red-500/50 transition-colors"
-            >
-              <option value="Pending Search">Pending Search</option>
-              <option value="Part Located">Part Located</option>
-              <option value="Shipped">Shipped</option>
-              <option value="No Stock">No Stock</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
+            <Select value={status} onValueChange={(val) => { setStatus(val); setDirty(true); }}>
+              <SelectTrigger className="w-full bg-slate-950 text-xs text-slate-300 font-mono border border-white/5 rounded-lg h-9">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-950 border border-white/10 text-slate-300 font-mono text-xs shadow-xl mt-12">
+                <SelectItem value="Pending Search">Pending Search</SelectItem>
+                <SelectItem value="Part Located">Part Located</SelectItem>
+                <SelectItem value="Shipped">Shipped</SelectItem>
+                <SelectItem value="No Stock">No Stock</SelectItem>
+                <SelectItem value="Cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {isModified && (
@@ -150,6 +150,21 @@ const PartRequestRowCard = memo(function PartRequestRowCard({
               <span>Commit Changes</span>
             </button>
           )}
+
+          {onDelete && (
+            <button
+              onClick={() => {
+                if (confirm("Are you sure you want to permanently delete this part request?")) {
+                  onDelete(req.requestId);
+                }
+              }}
+              disabled={isLoading}
+              className="w-full bg-red-950/40 hover:bg-red-900/40 text-red-400 font-mono font-bold py-2 px-3 rounded-lg text-[10px] uppercase tracking-wider transition-all flex items-center justify-center space-x-1 cursor-pointer disabled:opacity-50 border border-red-900/30"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete Request</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -163,8 +178,10 @@ function AdminPartsPanelInner({
   partRequests,
   actionLoading,
   onUpdateStatus,
+  onDelete,
 }: AdminPartsPanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("All");
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value),
@@ -172,29 +189,52 @@ function AdminPartsPanelInner({
   );
 
   const filteredParts = useMemo(() => {
-    if (!searchTerm.trim()) return partRequests;
+    let result = partRequests;
+    if (statusFilter !== "All") {
+      result = result.filter((p) => p.status === statusFilter);
+    }
+    if (!searchTerm.trim()) return result;
     const term = searchTerm.toLowerCase();
-    return partRequests.filter((p) =>
+    return result.filter((p) =>
       `${p.name} ${p.partsNeeded} ${p.vehicleName} ${p.phone}`
         .toLowerCase()
         .includes(term)
     );
-  }, [partRequests, searchTerm]);
+  }, [partRequests, searchTerm, statusFilter]);
 
   return (
     <div className="space-y-6">
-      {/* Search bar */}
-      <div className="flex space-x-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
-          <input
-            id="admin-parts-search"
-            type="text"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            placeholder="Search by customer name, requested part descriptions, phone..."
-            className="w-full bg-slate-950/50 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/10 font-mono"
-          />
+      {/* Search bar & Filters */}
+      <div className="space-y-4">
+        <div className="flex space-x-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
+            <input
+              id="admin-parts-search"
+              type="text"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search by customer name, requested part descriptions, phone..."
+              className="w-full bg-slate-950/50 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/10 font-mono"
+            />
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {["All", "Pending Search", "Part Located", "Shipped", "No Stock", "Cancelled"].map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase transition-all border cursor-pointer ${
+                statusFilter === status
+                  ? "bg-gradient-to-r from-red-600 to-pink-600 text-white border-transparent shadow-lg"
+                  : "bg-slate-900 border-white/5 text-slate-400 hover:text-white"
+              }`}
+            >
+              {status}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -202,10 +242,11 @@ function AdminPartsPanelInner({
         <div className="space-y-4">
           {filteredParts.map((req) => (
             <PartRequestRowCard
-              key={req.requestId}
+              key={`${req.requestId}-${req.status}-${req.notes ?? ""}`}
               req={req}
               actionLoading={actionLoading}
               onUpdate={onUpdateStatus}
+              onDelete={onDelete}
             />
           ))}
         </div>

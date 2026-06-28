@@ -5,7 +5,12 @@ import { motion, AnimatePresence } from "motion/react";
 
 import { RefreshCw, AlertCircle, Clock, Search } from "lucide-react";
 
-import { getAllPartRequests, getAllScrapValuations } from "@/lib/actions";
+import {
+  getRequestsByIds,
+  getValuationsByIds,
+  lookupPartRequestById,
+  lookupScrapValuationById,
+} from "@/lib/actions";
 import type { PartRequest as PrismaPartRequest, ScrapValuation as PrismaScrapValuation } from "@prisma/client";
 
 interface PartQuoteRequest {
@@ -72,12 +77,21 @@ function convertPartRequest(prismaPart: PrismaPartRequest): PartQuoteRequest {
 }
 
 function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValuation {
+  let mappedStatus = "Pending Collection";
+  if (prismaValuation.status === "Completed") {
+    mappedStatus = "Collected";
+  } else if (prismaValuation.status === "Rejected") {
+    mappedStatus = "Cancelled";
+  } else if (prismaValuation.status === "Pending") {
+    mappedStatus = "Pending Collection";
+  }
+
   return {
     id: prismaValuation.id,
     vehicleName: prismaValuation.vehicleName,
     registration: prismaValuation.registration,
     estimatedValue: prismaValuation.estimatedValue,
-    status: prismaValuation.status,
+    status: mappedStatus,
     notes: prismaValuation.notes ?? undefined,
     timestamp: prismaValuation.createdAt.toISOString()
   };
@@ -99,19 +113,16 @@ export default function MyRequestsView() {
     setFetchError(null);
 
     try {
-      const [prismaPartRequests, prismaScrapValuations] = await Promise.all([
-        getAllPartRequests(),
-        getAllScrapValuations()
-      ]);
-
       const myScrapIds = getStoredIds(SCRAP_IDS_KEY);
       const myPartIds = getStoredIds(PART_IDS_KEY);
 
-      const allParts = prismaPartRequests.map(convertPartRequest);
-      const allScrap = prismaScrapValuations.map(convertScrapValuation);
+      const [{ partRequests: prismaPartRequests }, prismaScrapValuations] = await Promise.all([
+        getRequestsByIds({ partIds: myPartIds, scrapIds: [] }),
+        getValuationsByIds(myScrapIds),
+      ]);
 
-      setPartQuotes(allParts.filter((p) => myPartIds.includes(p.requestId)));
-      setScrapValuations(allScrap.filter((s) => myScrapIds.includes(s.id)));
+      setPartQuotes(prismaPartRequests.map(convertPartRequest));
+      setScrapValuations(prismaScrapValuations.map(convertScrapValuation));
     } catch (err) {
       console.error("Inquiries fetch went wrong:", err);
       setFetchError("Could not load your requests right now. Please try again.");
@@ -124,30 +135,29 @@ export default function MyRequestsView() {
     e.preventDefault();
     if (!lookupId.trim() || lookupLoading) return;
 
-    const searchId = lookupId.trim().toUpperCase();
+    const searchId = lookupId.trim();
     setLookupMessage(null);
     setLookupLoading(true);
 
     try {
-      const [prismaPartRequests, prismaScrapValuations] = await Promise.all([
-        getAllPartRequests(),
-        getAllScrapValuations()
+      const [foundPartRecord, foundScrapRecord] = await Promise.all([
+        lookupPartRequestById(searchId),
+        lookupScrapValuationById(searchId),
       ]);
 
-      const allParts = prismaPartRequests.map(convertPartRequest);
-      const allScrap = prismaScrapValuations.map(convertScrapValuation);
-
-      const foundPart = allParts.find((p) => p.requestId?.toUpperCase() === searchId);
-      const foundScrap = allScrap.find((s) => s.id?.toUpperCase() === searchId);
+      const foundPart = foundPartRecord ? convertPartRequest(foundPartRecord) : null;
+      const foundScrap = foundScrapRecord ? convertScrapValuation(foundScrapRecord) : null;
 
       if (foundPart) {
         const updatedPartIds = addStoredId(PART_IDS_KEY, foundPart.requestId);
-        setPartQuotes(allParts.filter((p) => updatedPartIds.includes(p.requestId)));
+        const { partRequests } = await getRequestsByIds({ partIds: updatedPartIds, scrapIds: [] });
+        setPartQuotes(partRequests.map(convertPartRequest));
         setLookupMessage({ type: "success", text: "Spare request found and linked to device session!" });
         setLookupId("");
       } else if (foundScrap) {
         const updatedScrapIds = addStoredId(SCRAP_IDS_KEY, foundScrap.id);
-        setScrapValuations(allScrap.filter((s) => updatedScrapIds.includes(s.id)));
+        const scrapRecords = await getValuationsByIds(updatedScrapIds);
+        setScrapValuations(scrapRecords.map(convertScrapValuation));
         setLookupMessage({ type: "success", text: "Valuation quote found and linked to device session!" });
         setLookupId("");
       } else {
@@ -386,6 +396,16 @@ export default function MyRequestsView() {
                       <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5 text-[11px] text-slate-300">
                         <span className="text-[9px] text-slate-500 font-mono uppercase block mb-1">Stock Team Feedback:</span>
                         {req.notes}
+                      </div>
+                    )}
+
+                    {req.status === "No Stock" && (
+                      <div className="bg-rose-950/20 p-3.5 rounded-xl border border-rose-900/30 text-[11px] text-rose-300 flex items-start gap-2.5">
+                        <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <span className="font-bold font-mono uppercase block text-[9px] text-rose-400 tracking-wider">Part Request Expired / Not Found</span>
+                          <p className="leading-relaxed">Unfortunately, we could not locate this part in our breaker yard stock. This request will be automatically removed from our secure cloud index within 3 days.</p>
+                        </div>
                       </div>
                     )}
 

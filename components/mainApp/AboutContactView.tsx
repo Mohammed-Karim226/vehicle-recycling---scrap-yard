@@ -28,8 +28,8 @@ export default function AboutContactView() {
     { label: "Sunday", hours: "Closed", isClosed: true },
   ];
 
-  const contactPhone = "01733 971842";
-  const contactPhoneHref = "tel:+441733971842";
+  const contactPhone = "07557402755";
+  const contactPhoneHref = "tel:+447557402755";
   const contactEmail = "quotes@rrsautospeterborough.co.uk";
 
   // Modern spring stagger setup
@@ -73,7 +73,7 @@ export default function AboutContactView() {
           </h2>
           <p className="text-slate-400 text-xs sm:text-sm leading-relaxed font-sans max-w-4xl">
             RRS Autos is an established, independent, family-run vehicle
-            recycler operating on Oxney Road, Peterborough. Over the last 15
+            recycler operating in Thorney, Peterborough. Over the last 15
             years, we have built a proud reputation of honest service, direct
             payouts, and professional vehicle extractions across Cambridgeshire.
           </p>
@@ -129,7 +129,7 @@ export default function AboutContactView() {
           className="bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl p-6 space-y-6 shadow-xl"
         >
           <h3 className="text-white font-bold font-mono tracking-widest uppercase text-xs border-l-2 border-red-500 pl-3">
-            Oxney Road Yard Details
+            Thorney Yard Details
           </h3>
 
           <div className="space-y-3.5">
@@ -170,9 +170,9 @@ export default function AboutContactView() {
                 <li className="flex items-start space-x-3">
                   <MapPin className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                   <span>
-                    Unit 2, Oxney Road Industrial Area,
+                    Peacock House, Station Rd,
                     <br />
-                    Peterborough, PE1 5YP
+                    Thorney, PE6 0QE
                   </span>
                 </li>
                 <li className="flex items-center space-x-3">
@@ -211,20 +211,18 @@ export default function AboutContactView() {
               <MapPin className="h-6 w-6 animate-bounce motion-reduce:animate-none" />
             </div>
             <h3 className="text-white font-mono uppercase font-black text-md">
-              Located on Oxney Road, Peterborough
+              Located in Thorney, Peterborough
             </h3>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              Drive right down past the Sainsbury&apos;s roundabout into the
-              Oxney East Industrial estate to scale your vehicle, or call us for
-              a crane recovery pickup today.
+              Visit us at Peacock House on Station Road in Thorney, or call us for a crane recovery pickup today.
             </p>
             <a
-              href="https://www.google.com/maps/search/?api=1&query=52.586444,-0.197889"
+              href="https://www.google.com/maps/search/?api=1&query=52.6191,-0.1066"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block p-2.5 bg-slate-900/60 hover:bg-slate-800/60 rounded-xl border border-white/5 text-[10px] text-slate-400 hover:text-red-300 tracking-wider font-mono transition-colors"
             >
-              📍 Get Directions — 52°35&apos;11.2&quot;N 0°11&apos;52.4&quot;W
+              📍 Get Directions — 52°37&apos;08.8&quot;N 0°06&apos;23.8&quot;W
             </a>
           </div>
         </div>

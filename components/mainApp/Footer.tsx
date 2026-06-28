@@ -24,7 +24,7 @@ export default function Footer({ setCurrentTab }: FooterProps) {
           </div>
           <p className="text-xs leading-relaxed text-slate-400">
             Peterborough&apos;s leading vehicle recycling and car salvage yard.
-            Family-run for over 15 years on Oxney Road, delivering honest
+            Family-run for over 15 years in Thorney, delivering honest
             quotes, rapid collections, and high-quality spare auto parts.
           </p>
           <div className="flex items-center space-x-2 text-[10px] text-slate-500 font-mono">
@@ -111,16 +111,14 @@ export default function Footer({ setCurrentTab }: FooterProps) {
             <li className="flex items-start space-x-2.5">
               <MapPin className="h-4.5 w-4.5 text-red-500 shrink-0 mt-0.5" />
               <span>
-                Unit 2, Oxney Road Industrial Area,
+                Peacock House, Station Rd,
                 <br />
-                Peterborough, Cambridgeshire,
-                <br />
-                PE1 5YP
+                Thorney, PE6 0QE
               </span>
             </li>
             <li className="flex items-center space-x-2.5">
               <Phone className="h-4 w-4 text-red-500" />
-              <span>test01733 971842</span>
+              <span>07557402755</span>
             </li>
             <li className="flex items-center space-x-2.5">
               <Mail className="h-4 w-4 text-red-500" />
