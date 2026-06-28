@@ -61,7 +61,7 @@ model VehicleYard {
 model ScrapMetalPrice {
   id            String      @id @default(uuid()) @db.Uuid
 
-  category      String
+  category      String      @unique
 
   pricePerKgMin Float
   pricePerKgMax Float
