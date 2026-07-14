@@ -11,7 +11,8 @@ import {
   uuidSchema,
 } from '@/lib/validation/schemas'
 import type { ScrapValuation, ScrapQuoteStatus } from '@prisma/client'
-import { lookupVehicle, estimateWeightKg, DVLAError } from '@/lib/dvla'
+import { lookupMOTVehicle, estimateWeightKg, MOTError, type MOTVehicleResponse, type MOTTestDefect } from '@/lib/mot'
+import { lookupVehicle, DVLAError, type DVLAVehicleResponse } from '@/lib/dvla'
 
 const scrapValuationService = new ScrapValuationService()
 const scrapMetalPriceService = new ScrapMetalPriceService()
@@ -28,43 +29,109 @@ export async function generateScrapValuation(
   weightKg: number
   engineSize: string
   fuelType: string
+  motStatus?: string
+  motExpiryDate?: string
+  mileage?: string
+  colour?: string
+  defects?: string[]
 }> {
   return withActionError('generateScrapValuation', async () => {
     const parsed = quoteInputSchema.safeParse({ registration, postcode })
     if (!parsed.success) throw new ValidationError('Invalid registration or postcode')
 
-    let vehicleData: {
-      make?: string
-      model?: string
-      yearOfManufacture?: number
-      engineCapacity?: number
-      fuelType?: string
-    } = {}
+    let motData: MOTVehicleResponse | null = null
+    let dvlaData: DVLAVehicleResponse | null = null
 
     try {
-      // Look up vehicle from DVLA
-      const dvlaData = await lookupVehicle(parsed.data.registration)
-      vehicleData = dvlaData
+      // Look up vehicle using the DVLA Vehicle Enquiry Service API
+      dvlaData = await lookupVehicle(parsed.data.registration)
     } catch (error) {
-      // If DVLA fails, we'll use fallback values
-      if (error instanceof DVLAError && error.statusCode === 404) {
-        console.warn(`Vehicle not found in DVLA for registration: ${parsed.data.registration}`)
+      if (error instanceof DVLAError) {
+        console.warn(`DVLA lookup error for registration ${parsed.data.registration}:`, error.message)
       } else {
         console.error('DVLA lookup error:', error)
       }
     }
 
-    // Extract and format vehicle details
-    const make = vehicleData.make || 'Unknown'
-    const model = vehicleData.model || 'Vehicle'
-    const year = vehicleData.yearOfManufacture || new Date().getFullYear()
-    const engineCapacityCc = vehicleData.engineCapacity
-    const fuelType = vehicleData.fuelType || 'Petrol'
+    try {
+      // Look up vehicle using the MOT History API
+      motData = await lookupMOTVehicle(parsed.data.registration)
+    } catch (error) {
+      if (error instanceof MOTError && error.statusCode === 404) {
+        console.warn(`Vehicle not found in MOT records for registration: ${parsed.data.registration}`)
+      } else {
+        console.error('MOT lookup error:', error)
+      }
+    }
+
+    // Extract details or use defaults if not found (prioritize DVLA data, fall back to MOT, then defaults)
+    const make = dvlaData?.make || motData?.make || 'Unknown'
+    const model = motData?.model || 'Vehicle' // DVLA doesn't provide model, use MOT or default
+    const colour = dvlaData?.colour || motData?.primaryColour || 'Unknown'
+    const fuelType = dvlaData?.fuelType || motData?.fuelType || 'Petrol'
+    const engineCapacityCc = dvlaData?.engineCapacity || (motData?.engineSize ? parseInt(motData.engineSize, 10) : undefined)
     const engineSizeStr = engineCapacityCc ? `${(engineCapacityCc / 1000).toFixed(1)}L` : 'Unknown'
+
+    // Extract year of manufacture from manufactureDate or firstUsedDate
+    let year = new Date().getFullYear()
+    if (dvlaData?.yearOfManufacture) {
+      year = dvlaData.yearOfManufacture
+    } else if (motData?.manufactureDate) {
+      const parsedYear = parseInt(motData.manufactureDate.split('-')[0], 10)
+      if (!isNaN(parsedYear)) year = parsedYear
+    } else if (motData?.firstUsedDate) {
+      const parsedYear = parseInt(motData.firstUsedDate.split('-')[0], 10)
+      if (!isNaN(parsedYear)) year = parsedYear
+    }
+    
     const vehicleName = `${make} ${model} ${year}`
 
-    // Calculate weight
+    // Calculate weight using the new helper
     const weightKg = estimateWeightKg(engineCapacityCc, fuelType)
+
+    // Parse MOT Status, Expiry, Mileage and Defects
+    let motStatus = 'Unknown'
+    let motExpiryDate = ''
+    let mileage = ''
+    const defects: string[] = []
+
+    if (motData?.motTests && motData.motTests.length > 0) {
+      const latestTest = motData.motTests[0]
+      const today = new Date()
+      
+      if (latestTest.testResult === 'PASSED') {
+        if (latestTest.expiryDate) {
+          const expiry = new Date(latestTest.expiryDate)
+          if (expiry >= today) {
+            motStatus = 'Active'
+          } else {
+            motStatus = 'Expired'
+          }
+          motExpiryDate = latestTest.expiryDate
+        } else {
+          motStatus = 'Active'
+        }
+      } else if (latestTest.testResult === 'FAILED') {
+        motStatus = 'Failed'
+        if (latestTest.expiryDate) {
+          motExpiryDate = latestTest.expiryDate
+        }
+      }
+
+      if (latestTest.odometerValue) {
+        mileage = `${latestTest.odometerValue} ${latestTest.odometerUnit || 'mi'}`
+      }
+
+      if (latestTest.defects && latestTest.defects.length > 0) {
+        latestTest.defects.forEach((defect: MOTTestDefect) => {
+          if (defect.text) {
+            defects.push(`${defect.type || 'ADVISORY'}: ${defect.text}`)
+          }
+        })
+      }
+    } else if (motData) {
+      motStatus = 'No History'
+    }
 
     // Get metal prices from database
     let estimatedValue = 0
@@ -88,6 +155,20 @@ export async function generateScrapValuation(
     // Ensure minimum value of £50
     if (estimatedValue < 50) estimatedValue = 50
 
+    // Construct a rich notes report from MOT specifications to save in DB for admins
+    const notesLines = [
+      `MOT Status: ${motStatus}`,
+      motExpiryDate ? `MOT Expiry: ${motExpiryDate}` : null,
+      mileage ? `Latest Odometer: ${mileage}` : null,
+      colour ? `Colour: ${colour}` : null,
+    ].filter(Boolean) as string[]
+
+    if (defects.length > 0) {
+      notesLines.push('Recent Defects/Advisories:')
+      defects.forEach(d => notesLines.push(`- ${d}`))
+    }
+    const notesStr = notesLines.join('\n')
+
     const valuation = await scrapValuationService.createValuation({
       registration: parsed.data.registration.toUpperCase(),
       postcode: parsed.data.postcode.toUpperCase(),
@@ -97,6 +178,7 @@ export async function generateScrapValuation(
       engineSize: engineSizeStr,
       fuelType,
       status: 'Pending' as ScrapQuoteStatus,
+      notes: notesStr,
     })
 
     return {
@@ -108,6 +190,11 @@ export async function generateScrapValuation(
       weightKg: valuation.weightKg,
       engineSize: valuation.engineSize,
       fuelType: valuation.fuelType,
+      motStatus,
+      motExpiryDate,
+      mileage,
+      colour,
+      defects,
     }
   })
 }

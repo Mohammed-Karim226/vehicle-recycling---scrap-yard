@@ -41,6 +41,11 @@ export interface ScrapValuationResult {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
+  motStatus?: string;
+  motExpiryDate?: string;
+  mileage?: string;
+  colour?: string;
+  defects?: string[];
 }
 
 export interface PartQuoteSubmitted {

@@ -378,7 +378,42 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = false }
                   <span className="px-2.5 py-1 bg-slate-900 text-stone-200 rounded-md border border-white/5 font-bold">
                     Fuel: {valuation.fuelType}
                   </span>
+                  {valuation.colour && valuation.colour !== 'Unknown' && (
+                    <span className="px-2.5 py-1 bg-slate-900 text-stone-200 rounded-md border border-white/5 font-bold uppercase">
+                      Colour: {valuation.colour}
+                    </span>
+                  )}
+                  {valuation.mileage && (
+                    <span className="px-2.5 py-1 bg-slate-900 text-cyan-400 rounded-md border border-white/5 font-bold uppercase">
+                      Odometer: {valuation.mileage}
+                    </span>
+                  )}
                 </div>
+
+                {valuation.motStatus && (
+                  <div className="mt-3 flex justify-center">
+                    {valuation.motStatus === 'Active' ? (
+                      <span className="px-3 py-1.5 bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 rounded-xl font-mono text-[9px] uppercase font-bold tracking-wider flex items-center gap-1.5">
+                        <span className="h-2 w-2 bg-emerald-400 rounded-full animate-pulse shrink-0" />
+                        MOT: Active (Expires {valuation.motExpiryDate || 'N/A'})
+                      </span>
+                    ) : valuation.motStatus === 'Expired' ? (
+                      <span className="px-3 py-1.5 bg-amber-950/80 border border-amber-500/30 text-amber-400 rounded-xl font-mono text-[9px] uppercase font-bold tracking-wider flex items-center gap-1.5">
+                        <span className="h-2 w-2 bg-amber-500 rounded-full shrink-0" />
+                        MOT: Expired ({valuation.motExpiryDate || 'N/A'})
+                      </span>
+                    ) : valuation.motStatus === 'Failed' ? (
+                      <span className="px-3 py-1.5 bg-rose-950/80 border border-rose-500/30 text-rose-400 rounded-xl font-mono text-[9px] uppercase font-bold tracking-wider flex items-center gap-1.5">
+                        <span className="h-2 w-2 bg-rose-500 rounded-full shrink-0" />
+                        MOT: Failed ({valuation.motExpiryDate || 'N/A'})
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1.5 bg-slate-900 border border-white/5 text-slate-400 rounded-xl font-mono text-[9px] uppercase font-bold tracking-wider">
+                        MOT: No History
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="bg-slate-900/40 border border-white/5 p-6 rounded-xl flex flex-col items-center justify-center relative overflow-hidden text-center shadow-inner">
@@ -399,6 +434,29 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = false }
                   <span>Est. Weight: {valuation.weightKg} kg</span>
                 </div>
               </div>
+
+              {valuation.defects && valuation.defects.length > 0 && (
+                <div className="bg-slate-950/40 border border-white/5 rounded-xl p-5 space-y-3 text-left">
+                  <h4 className="text-[10px] font-bold text-slate-400 font-mono uppercase tracking-widest flex items-center gap-2">
+                    <Info className="h-4.5 w-4.5 text-red-500/70" />
+                    Recent MOT Advisories & Defects
+                  </h4>
+                  <ul className="space-y-2 text-[11px] font-mono text-slate-300">
+                    {valuation.defects.map((defect, idx) => {
+                      const isAdvisory = defect.toUpperCase().startsWith('ADVISORY');
+                      return (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className={cn(
+                            "mt-1 w-1.5 h-1.5 rounded-full shrink-0",
+                            isAdvisory ? "bg-amber-400 shadow-[0_0_8px_#fbbf24]" : "bg-rose-500 shadow-[0_0_8px_#f43f5e]"
+                          )} />
+                          <span>{defect}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
 
               <div className="bg-white/[0.02] border border-white/5 rounded-xl p-5 space-y-4">
                 <h4 className="text-xs font-bold text-slate-300 font-mono uppercase tracking-wider text-center">

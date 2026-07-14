@@ -31,11 +31,15 @@ export class DVLAError extends Error {
 
 export async function lookupVehicle(registration: string): Promise<DVLAVehicleResponse> {
   const apiKey = process.env.DVLA_API_KEY
+  const apiUrl = process.env.DVLA_API_URL
   if (!apiKey) {
     throw new DVLAError('DVLA API key not configured', 500)
   }
+  if (!apiUrl) {
+    throw new DVLAError('DVLA API URL not configured', 500)
+  }
 
-  const response = await fetch('https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles', {
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'x-api-key': apiKey,

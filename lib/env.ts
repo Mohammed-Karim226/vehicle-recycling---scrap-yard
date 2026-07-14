@@ -11,6 +11,8 @@ const envSchema = z
     ADMIN_SESSION_SECRET: z.string().min(16),
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
+    DVLA_API_KEY: z.string().min(1),
+    DVLA_API_URL: z.string().url(),
   })
   .superRefine((data, ctx) => {
     const hasUrl = Boolean(data.NEXT_PUBLIC_SUPABASE_URL);
@@ -41,6 +43,8 @@ export function getEnv(): Env {
       (process.env.NODE_ENV === "production" ? undefined : "dev-admin-session-secret"),
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    DVLA_API_KEY: process.env.DVLA_API_KEY,
+    DVLA_API_URL: process.env.DVLA_API_URL,
   });
 
   if (!parsed.success) {
