@@ -34,6 +34,7 @@ export const vehicleYardUpdateSchema = vehicleYardCreateSchema.partial();
 export const scrapValuationUpdateSchema = z.object({
   status: z.enum(["Pending", "Approved", "Rejected", "Completed"]).optional(),
   notes: z.string().max(2000).optional().nullable(),
+  estimatedValue: z.number().min(0).max(1000000).optional(),
 });
 
 export const partRequestUpdateSchema = z.object({

@@ -63,4 +63,4 @@ export interface PartQuoteSubmitted {
 }
 
 /** Admin dashboard sub-tab identifiers */
-export type AdminSubTab = 'overview' | 'scrap' | 'parts' | 'yard';
+export type AdminSubTab = 'overview' | 'scrap' | 'parts' | 'yard' | 'prices';

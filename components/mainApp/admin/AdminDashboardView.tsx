@@ -3,7 +3,6 @@
 import { useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { RefreshCw, AlertCircle, X } from "lucide-react";
-import type { AdminSubTab } from "@/types/types";
 
 // ── Hooks ──
 import { useAdminAuth } from "./useAdminAuth";
@@ -15,16 +14,18 @@ import AdminOverviewPanel from "./AdminOverviewPanel";
 import AdminScrapPanel from "./AdminScrapPanel";
 import AdminPartsPanel from "./AdminPartsPanel";
 import AdminYardPanel from "./AdminYardPanel";
+import AdminPricesPanel from "./AdminPricesPanel";
 import { useState } from "react";
 
 // ────────────────────────────────────────────────────────────
 // Tab definitions
 // ────────────────────────────────────────────────────────────
-const TABS: { id: AdminSubTab; label: string; count?: true }[] = [
+const TABS: { id: string; label: string; count?: true }[] = [
   { id: "overview", label: "Overview Metrics" },
   { id: "scrap", label: "Scrap & Valuations", count: true },
   { id: "parts", label: "Spare Request Queue", count: true },
   { id: "yard", label: "Manage Yard Vehicles", count: true },
+  { id: "prices", label: "Manage Metal Prices" },
 ];
 
 // ────────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ interface AdminDashboardViewProps {
 export default function AdminDashboardView({ onRefreshTrigger }: AdminDashboardViewProps) {
   const auth = useAdminAuth();
   const data = useAdminData(onRefreshTrigger);
-  const [activeSubTab, setActiveSubTab] = useState<AdminSubTab>("overview");
+  const [activeSubTab, setActiveSubTab] = useState<string>("overview");
 
   // Fetch data when admin authenticates
   useEffect(() => {
@@ -50,13 +51,13 @@ export default function AdminDashboardView({ onRefreshTrigger }: AdminDashboardV
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.isAdmin]);
 
-  const handleTabChange = useCallback((tabId: AdminSubTab) => {
+  const handleTabChange = useCallback((tabId: string) => {
     setActiveSubTab(tabId);
   }, []);
 
   // Count resolver for tab badges
   const getTabCount = useCallback(
-    (tabId: AdminSubTab): number | null => {
+    (tabId: string): number | null => {
       switch (tabId) {
         case "scrap":
           return data.scrapQuotes.length;
@@ -251,6 +252,22 @@ export default function AdminDashboardView({ onRefreshTrigger }: AdminDashboardV
                 onUpdateStatus={data.handleUpdateYardStatus}
                 onDelete={data.handleDeleteYardVehicle}
                 onAdd={data.handleAddYardVehicle}
+              />
+            </motion.div>
+          )}
+          {activeSubTab === "prices" && (
+            <motion.div
+              key="prices-module"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+            >
+              <AdminPricesPanel
+                scrapMetalPrices={data.scrapMetalPrices}
+                actionLoading={data.actionLoading}
+                onAdd={data.handleAddPrice}
+                onUpdate={data.handleUpdatePrice}
+                onDelete={data.handleDeletePrice}
               />
             </motion.div>
           )}
