@@ -74,6 +74,35 @@ model ScrapMetalPrice {
   @@index([category])
 }
 
+model CatalyticConverterPrice {
+  id          String     @id @default(uuid()) @db.Uuid
+
+  // Category-based pricing (e.g. "Small Foreign", "Large Domestic", "Diesel")
+  category    String     @unique
+
+  // Optional vehicle-specific mapping for precise lookups.
+  // When set, lookup by make/model/year returns this entry instead of the category.
+  make        String?
+  model       String?
+  yearFrom    Int?
+  yearTo      Int?
+
+  // Single fixed payout per converter (cats are valued per-unit, not per-kg)
+  price       Float
+
+  trend       PriceTrend @default(Stable)
+
+  // Admin can deactivate an entry without deleting it (keeps history)
+  active      Boolean    @default(true)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([category])
+  @@index([make, model])
+  @@index([active])
+}
+
 model ScrapValuation {
   id             String            @id @default(uuid()) @db.Uuid
 

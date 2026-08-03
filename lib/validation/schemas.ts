@@ -53,6 +53,42 @@ export const scrapMetalPriceCreateSchema = z.object({
 
 export const scrapMetalPriceUpdateSchema = scrapMetalPriceCreateSchema.partial();
 
+const catalyticConverterBaseSchema = z.object({
+  category: z.string().trim().min(1).max(100),
+  make: z.string().trim().min(1).max(100).optional().nullable(),
+  model: z.string().trim().min(1).max(100).optional().nullable(),
+  yearFrom: z.number().int().min(1900).max(new Date().getFullYear() + 1).optional().nullable(),
+  yearTo: z.number().int().min(1900).max(new Date().getFullYear() + 1).optional().nullable(),
+  price: z.number().min(0).max(100000),
+  trend: z.enum(["Rising", "Stable", "Falling"]).default("Stable"),
+  active: z.boolean().default(true),
+});
+
+const yearRangeCheck = (data: { yearFrom?: number | null; yearTo?: number | null }) =>
+  !(data.yearFrom != null && data.yearTo != null && data.yearFrom > data.yearTo);
+
+const yearRangeError = {
+  message: "yearFrom cannot be greater than yearTo",
+  path: ["yearFrom"] as PropertyKey[],
+};
+
+export const catalyticConverterCreateSchema = catalyticConverterBaseSchema.refine(
+  yearRangeCheck,
+  yearRangeError
+);
+
+// Refinements must be applied after .partial(); Zod cannot make a refined schema partial.
+export const catalyticConverterUpdateSchema = catalyticConverterBaseSchema
+  .partial()
+  .refine(yearRangeCheck, yearRangeError);
+
+export const catalyticConverterLookupSchema = z.object({
+  make: z.string().trim().min(1).max(100).optional(),
+  model: z.string().trim().min(1).max(100).optional(),
+  year: z.number().int().min(1900).max(new Date().getFullYear() + 1).optional(),
+  category: z.string().trim().min(1).max(100).optional(),
+});
+
 export const idsBatchSchema = z.object({
   partIds: z.array(uuidSchema).max(50).default([]),
   scrapIds: z.array(uuidSchema).max(50).default([]),
