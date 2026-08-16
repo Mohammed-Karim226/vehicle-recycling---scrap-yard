@@ -105,8 +105,8 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
           status: "Pending_Search" as PartRequestStatus
         });
 
-        appendIdToStorage("rrs_my_part_ids", partRequest.id);
-        dispatch({ type: "SUBMIT_SUCCESS", requestId: partRequest.id });
+        appendIdToStorage("rrs_my_part_ids", partRequest.trackingToken);
+        dispatch({ type: "SUBMIT_SUCCESS", requestId: partRequest.trackingToken });
         onQuoteAdded();
       } catch (err: unknown) {
         dispatch({

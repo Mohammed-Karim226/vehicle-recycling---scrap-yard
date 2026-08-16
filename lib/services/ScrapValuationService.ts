@@ -20,6 +20,10 @@ export class ScrapValuationService {
     return this.repository.findByIds(ids)
   }
 
+  async getValuationsByTrackingTokens(tokens: string[]): Promise<ScrapValuation[]> {
+    return this.repository.findByTrackingTokens(tokens)
+  }
+
   async getValuationCount(): Promise<number> {
     return this.repository.countAll()
   }

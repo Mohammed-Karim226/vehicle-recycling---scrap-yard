@@ -5,7 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "motion/react";
-import { Car, MapPin, Sparkles, Scale, Info, CheckCircle2, RotateCcw, ArrowRight, Loader2, Phone, MessageCircle } from "lucide-react";
+import { MapPin, Sparkles, Scale, Info, CheckCircle2, RotateCcw, ArrowRight, Loader2, Phone, MessageCircle } from "lucide-react";
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -109,7 +109,7 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = false }: ScrapQuoteSectionProps) {
+export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionProps) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { status, valuation, confirmedContact, errorMsg } = state;
 
@@ -149,7 +149,7 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = false }
         
         if (!isMountedRef.current) return;
 
-        appendIdToStorage("rrs_my_scrap_ids", data.id);
+        appendIdToStorage("rrs_my_scrap_ids", data.trackingToken);
         confirmForm.reset({ contactInfo: "" });
         dispatch({ type: "SUBMIT_QUOTE_SUCCESS", valuation: data });
       } catch (err: unknown) {
@@ -183,7 +183,7 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = false }
         
         if (!isMountedRef.current) return;
 
-        appendIdToStorage("rrs_my_part_ids", partRequest.id);
+        appendIdToStorage("rrs_my_part_ids", partRequest.trackingToken);
         dispatch({ type: "CONFIRM_SUCCESS", contact: values.contactInfo.trim() });
         onQuoteAdded();
       } catch (err: unknown) {

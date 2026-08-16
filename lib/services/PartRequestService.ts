@@ -20,6 +20,10 @@ export class PartRequestService {
     return this.repository.findByIds(ids)
   }
 
+  async getRequestsByTrackingTokens(tokens: string[]): Promise<PartRequest[]> {
+    return this.repository.findByTrackingTokens(tokens)
+  }
+
   async getRequestCount(): Promise<number> {
     return this.repository.countAll()
   }

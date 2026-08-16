@@ -11,7 +11,8 @@ import {
   lookupPartRequestById,
   lookupScrapValuationById,
 } from "@/lib/actions";
-import type { PartRequest as PrismaPartRequest, ScrapValuation as PrismaScrapValuation } from "@prisma/client";
+import type { PublicPartRequest } from "@/lib/actions/partRequestActions";
+import type { PublicScrapValuation } from "@/lib/actions/scrapValuationActions";
 
 interface PartQuoteRequest {
   requestId: string;
@@ -65,18 +66,18 @@ function addStoredId(key: string, id: string): string[] {
 }
 
 // Helper to convert Prisma types to our component types
-function convertPartRequest(prismaPart: PrismaPartRequest): PartQuoteRequest {
+function convertPartRequest(prismaPart: PublicPartRequest): PartQuoteRequest {
   return {
-    requestId: prismaPart.id,
+    requestId: prismaPart.trackingToken,
     vehicleName: prismaPart.vehicleName,
     partsNeeded: prismaPart.partsNeeded,
     status: prismaPart.status.replace("_", " "),
     notes: prismaPart.notes ?? undefined,
-    timestamp: prismaPart.createdAt.toISOString()
+    timestamp: prismaPart.createdAt
   };
 }
 
-function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValuation {
+function convertScrapValuation(prismaValuation: PublicScrapValuation): ScrapValuation {
   let mappedStatus = "Pending Collection";
   if (prismaValuation.status === "Completed") {
     mappedStatus = "Collected";
@@ -87,13 +88,13 @@ function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValu
   }
 
   return {
-    id: prismaValuation.id,
+    id: prismaValuation.trackingToken,
     vehicleName: prismaValuation.vehicleName,
     registration: prismaValuation.registration,
     estimatedValue: prismaValuation.estimatedValue,
     status: mappedStatus,
     notes: prismaValuation.notes ?? undefined,
-    timestamp: prismaValuation.createdAt.toISOString()
+    timestamp: prismaValuation.createdAt
   };
 }
 

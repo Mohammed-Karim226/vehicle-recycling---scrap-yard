@@ -7,8 +7,16 @@ export const uuidSchema = z
   .pipe(z.string().uuid("Invalid reference ID format"));
 
 export const quoteInputSchema = z.object({
-  registration: z.string().trim().min(2).max(12),
-  postcode: z.string().trim().min(3).max(10),
+  registration: z
+    .string()
+    .trim()
+    .transform((value) => value.replace(/[\s-]/g, "").toUpperCase())
+    .pipe(z.string().regex(/^[A-Z0-9]{2,12}$/)),
+  postcode: z
+    .string()
+    .trim()
+    .transform((value) => value.replace(/\s+/g, "").toUpperCase())
+    .pipe(z.string().regex(/^[A-Z0-9]{3,10}$/)),
 });
 
 export const partRequestCreateSchema = z.object({
@@ -16,7 +24,7 @@ export const partRequestCreateSchema = z.object({
   vehicleName: z.string().trim().min(1).max(200),
   partsNeeded: z.string().trim().min(3).max(2000),
   name: z.string().trim().min(2).max(100),
-  phone: z.string().trim().min(7).max(20),
+  phone: z.string().trim().regex(/^\+?[0-9 ()-]{7,20}$/),
 });
 
 export const vehicleYardCreateSchema = z.object({
@@ -44,14 +52,29 @@ export const partRequestUpdateSchema = z.object({
   notes: z.string().max(2000).optional().nullable(),
 });
 
-export const scrapMetalPriceCreateSchema = z.object({
+const scrapMetalPriceFields = {
   category: z.string().trim().min(1).max(100),
   pricePerKgMin: z.number().min(0).max(10000),
   pricePerKgMax: z.number().min(0).max(10000),
   trend: z.enum(["Rising", "Stable", "Falling"]).default("Stable"),
+};
+
+const priceRangeRefinement = (value: { pricePerKgMin?: number; pricePerKgMax?: number }) =>
+  value.pricePerKgMin === undefined ||
+  value.pricePerKgMax === undefined ||
+  value.pricePerKgMin <= value.pricePerKgMax;
+
+export const scrapMetalPriceCreateSchema = z.object(scrapMetalPriceFields).refine((value) =>
+  priceRangeRefinement(value), {
+  message: "Minimum price must not exceed maximum price",
+  path: ["pricePerKgMax"],
 });
 
-export const scrapMetalPriceUpdateSchema = scrapMetalPriceCreateSchema.partial();
+export const scrapMetalPriceUpdateSchema = z.object(scrapMetalPriceFields).partial().refine((value) =>
+  priceRangeRefinement(value), {
+  message: "Minimum price must not exceed maximum price",
+  path: ["pricePerKgMax"],
+});
 
 export const idsBatchSchema = z.object({
   partIds: z.array(uuidSchema).max(50).default([]),
