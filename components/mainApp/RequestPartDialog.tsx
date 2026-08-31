@@ -105,8 +105,8 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
           status: "Pending_Search" as PartRequestStatus
         });
 
-        appendIdToStorage("rrs_my_part_ids", partRequest.id);
-        dispatch({ type: "SUBMIT_SUCCESS", requestId: partRequest.id });
+        appendIdToStorage("rrs_my_part_ids", partRequest.trackingToken);
+        dispatch({ type: "SUBMIT_SUCCESS", requestId: partRequest.trackingToken });
         onQuoteAdded();
       } catch (err: unknown) {
         dispatch({
@@ -135,7 +135,7 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
 
   return (
     <Dialog open={!!vehicle} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md w-full max-h-[85vh] overflow-y-auto border border-white/10 bg-slate-950/95 backdrop-blur-3xl text-left select-none">
+      <DialogContent className="app-scrollbar max-w-md w-full max-h-[85vh] overflow-y-auto border border-white/10 bg-slate-950/95 backdrop-blur-3xl text-left select-none">
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-tr from-red-500/5 to-transparent pointer-events-none"></div>
 
         {vehicle && (

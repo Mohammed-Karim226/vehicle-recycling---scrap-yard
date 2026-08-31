@@ -6,16 +6,16 @@ import { motion, AnimatePresence, Variants } from "motion/react";
 import { TrendingUp, TrendingDown, RefreshCw, Send, CheckCircle2 } from "lucide-react";
 import { mockScrapPrices } from "@/lib/mockData";
 import { getAllScrapMetalPrices } from "@/lib/actions";
-import type { ScrapMetalPrice as PrismaScrapMetalPrice } from "@prisma/client";
+import type { SerializedScrapMetalPrice } from "@/lib/actions/scrapMetalPriceActions";
 import type { ScrapMetalPrice } from "@/types/types";
 
 // Helper to convert Prisma ScrapMetalPrice to app type
-function convertPrismaPrice(prismaPrice: PrismaScrapMetalPrice): ScrapMetalPrice {
+function convertPrismaPrice(prismaPrice: SerializedScrapMetalPrice): ScrapMetalPrice {
   return {
     id: prismaPrice.id,
     category: prismaPrice.category,
-    pricePerKgMin: prismaPrice.pricePerKgMin,
-    pricePerKgMax: prismaPrice.pricePerKgMax,
+    pricePerKgMin: Number(prismaPrice.pricePerKgMin),
+    pricePerKgMax: Number(prismaPrice.pricePerKgMax),
     trend: prismaPrice.trend.replace("_", " ") as "Rising" | "Stable" | "Falling"
   };
 }
@@ -196,7 +196,7 @@ export default function ScrapPricesView() {
             Non-Ferrous Metals Index
           </h3>
 
-          <div className="overflow-x-auto">
+          <div className="app-scrollbar overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-white/5 text-slate-500 font-mono text-[10px] uppercase tracking-wider">

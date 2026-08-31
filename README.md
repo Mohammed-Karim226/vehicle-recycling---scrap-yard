@@ -1,4 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vehicle Recycling Scrap Yard
+
+## Production setup
+
+Use a pooled PostgreSQL URL for `DATABASE_URL` and a direct database URL for
+`DIRECT_URL`. Copy the variable names from `.env.example`; never commit `.env`.
+
+Use a random `ADMIN_SESSION_SECRET` of at least 32 characters. Create the first
+database admin after migrations:
+
+```bash
+npm run admin:create -- --email=admin@example.com --password="a-strong-password"
+```
+
+Running the command again for the same email rotates its password and reactivates
+the account. In production,
+configure the `vehicle-images` Supabase bucket so anonymous users cannot insert,
+update, or delete objects.
+
+Apply migrations and regenerate Prisma before building:
+
+```bash
+npx prisma migrate deploy
+npx prisma generate
+npm run build
+```
+
+Run `runRetentionMaintenance()` from `lib/maintenance/retention.ts` through your
+deployment scheduler once per day. The function is intentionally not exposed as
+a public route or Server Action.
 
 ## Getting Started
 

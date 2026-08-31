@@ -36,42 +36,41 @@ enum ScrapQuoteStatus {
 }
 
 model VehicleYard {
-  id          String        @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
-  make        String
-  model       String
-  year        Int
-  trim        String
+  make  String
+  model String
+  year  Int
+  trim  String
 
-  arrivedDate DateTime      @default(now())
+  arrivedDate DateTime @default(now())
 
-  status      VehicleStatus @default(In_Yard)
+  status VehicleStatus @default(In_Yard)
 
-  image       String
-  color       String
+  image String
+  color String
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([make])
   @@index([model])
   @@index([status])
+  @@index([arrivedDate, id])
 }
 
 model ScrapMetalPrice {
-  id            String      @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
-  category      String      @unique
+  category String @unique
 
-  pricePerKgMin Float
-  pricePerKgMax Float
+  pricePerKgMin Decimal @db.Decimal(12, 4)
+  pricePerKgMax Decimal @db.Decimal(12, 4)
 
-  trend         PriceTrend  @default(Stable)
+  trend PriceTrend @default(Stable)
 
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  @@index([category])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CatalyticConverterPrice {
@@ -104,48 +103,73 @@ model CatalyticConverterPrice {
 }
 
 model ScrapValuation {
-  id             String            @id @default(uuid()) @db.Uuid
+  id            String @id @default(uuid()) @db.Uuid
+  trackingToken String @unique @default(uuid()) @db.Uuid
 
-  registration   String
-  postcode       String
-  vehicleName    String
+  registration String
+  postcode     String
+  vehicleName  String
 
-  estimatedValue Float
-  weightKg       Float
+  estimatedValue Decimal @db.Decimal(12, 2)
+  weightKg       Decimal @db.Decimal(10, 2)
 
-  engineSize     String
-  fuelType       String
+  engineSize String
+  fuelType   String
 
-  status         ScrapQuoteStatus  @default(Pending)
+  status ScrapQuoteStatus @default(Pending)
 
-  notes          String?
+  notes String?
 
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([registration])
   @@index([postcode])
   @@index([status])
+  @@index([createdAt, id])
+  @@index([status, updatedAt])
 }
 
 model PartRequest {
-  id          String            @id @default(uuid()) @db.Uuid
+  id            String @id @default(uuid()) @db.Uuid
+  trackingToken String @unique @default(uuid()) @db.Uuid
 
   vehicleId   String?
   vehicleName String
 
   partsNeeded String
 
-  name        String
-  phone       String
+  name  String
+  phone String
 
-  status      PartRequestStatus @default(Pending_Search)
+  status PartRequestStatus @default(Pending_Search)
 
-  notes       String?
+  notes String?
 
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([vehicleName])
   @@index([status])
+  @@index([createdAt, id])
+  @@index([status, updatedAt])
+}
+
+model RateLimitBucket {
+  key         String   @id
+  count       Int      @default(1)
+  windowStart DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+}
+
+model AdminUser {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }

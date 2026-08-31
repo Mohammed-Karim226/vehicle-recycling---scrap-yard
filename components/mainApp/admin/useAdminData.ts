@@ -2,7 +2,9 @@
 
 import { useState, useCallback } from "react";
 import type { VehicleYard, ScrapValuationResult, PartQuoteSubmitted, ScrapMetalPrice } from "@/types/types";
-import type { VehicleYard as PrismaVehicleYard, ScrapValuation as PrismaScrapValuation, PartRequest as PrismaPartRequest, ScrapMetalPrice as PrismaScrapMetalPrice, VehicleStatus, ScrapQuoteStatus, PartRequestStatus, Prisma as PrismaTypes } from "@prisma/client";
+import type { VehicleYard as PrismaVehicleYard, PartRequest as PrismaPartRequest, VehicleStatus, ScrapQuoteStatus, PartRequestStatus, Prisma as PrismaTypes } from "@prisma/client";
+import type { AdminScrapValuation } from "@/lib/actions/scrapValuationActions";
+import type { SerializedScrapMetalPrice } from "@/lib/actions/scrapMetalPriceActions";
 import { 
   getAllVehicleYards, 
   createVehicleYard, 
@@ -41,7 +43,7 @@ function convertVehicleYard(prismaVehicle: PrismaVehicleYard): VehicleYard {
   };
 }
 
-function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValuationResult {
+function convertScrapValuation(prismaValuation: AdminScrapValuation): ScrapValuationResult {
   let mappedStatus = "Pending Inspection";
   if (prismaValuation.status === "Completed") {
     mappedStatus = "Collected";
@@ -56,8 +58,8 @@ function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValu
     registration: prismaValuation.registration,
     postcode: prismaValuation.postcode,
     vehicleName: prismaValuation.vehicleName,
-    estimatedValue: prismaValuation.estimatedValue,
-    weightKg: prismaValuation.weightKg,
+    estimatedValue: Number(prismaValuation.estimatedValue),
+    weightKg: Number(prismaValuation.weightKg),
     engineSize: prismaValuation.engineSize,
     fuelType: prismaValuation.fuelType,
     status: mappedStatus,
@@ -78,12 +80,12 @@ function convertPartRequest(prismaRequest: PrismaPartRequest): PartQuoteSubmitte
   };
 }
 
-function convertScrapMetalPrice(prismaPrice: PrismaScrapMetalPrice): ScrapMetalPrice {
+function convertScrapMetalPrice(prismaPrice: SerializedScrapMetalPrice): ScrapMetalPrice {
   return {
     id: prismaPrice.id,
     category: prismaPrice.category,
-    pricePerKgMin: prismaPrice.pricePerKgMin,
-    pricePerKgMax: prismaPrice.pricePerKgMax,
+    pricePerKgMin: Number(prismaPrice.pricePerKgMin),
+    pricePerKgMax: Number(prismaPrice.pricePerKgMax),
     trend: prismaPrice.trend,
     createdAt: prismaPrice.createdAt.toISOString(),
     updatedAt: prismaPrice.updatedAt.toISOString(),

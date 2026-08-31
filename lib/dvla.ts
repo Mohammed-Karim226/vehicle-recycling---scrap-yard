@@ -1,4 +1,4 @@
-
+import "server-only";
 export class DVLAError extends Error {
   statusCode?: number;
   errors?: string[];
@@ -88,6 +88,8 @@ export async function lookupVehicle(registration: string): Promise<DVLAVehicleRe
     body: JSON.stringify({
       registrationNumber: cleanReg,
     }),
+    signal: AbortSignal.timeout(8_000),
+    cache: 'no-store',
   });
 
   if (!response.ok) {

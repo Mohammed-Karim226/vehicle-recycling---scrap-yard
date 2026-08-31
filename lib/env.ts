@@ -4,11 +4,7 @@ const envSchema = z
   .object({
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     DIRECT_URL: z.string().min(1).optional(),
-    ADMIN_PIN_HASH: z
-      .string()
-      .length(64)
-      .default("03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"),
-    ADMIN_SESSION_SECRET: z.string().min(16),
+    ADMIN_SESSION_SECRET: z.string().min(32),
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
     // DVLA VES API
@@ -44,7 +40,6 @@ export function getEnv(): Env {
   const parsed = envSchema.safeParse({
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_URL: process.env.DIRECT_URL,
-    ADMIN_PIN_HASH: process.env.ADMIN_PIN_HASH,
     ADMIN_SESSION_SECRET:
       process.env.ADMIN_SESSION_SECRET ??
       (process.env.NODE_ENV === "production" ? undefined : "dev-admin-session-secret"),

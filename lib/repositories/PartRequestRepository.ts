@@ -18,31 +18,23 @@ export class PartRequestRepository {
     })
   }
 
+  async findByTrackingTokens(tokens: string[]): Promise<PartRequest[]> {
+    if (tokens.length === 0) return []
+    return prisma.partRequest.findMany({
+      where: { trackingToken: { in: tokens } } as never,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 50,
+    })
+  }
+
   async countAll(): Promise<number> {
     return prisma.partRequest.count()
   }
 
   async findAll(): Promise<PartRequest[]> {
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
-    try {
-      await prisma.partRequest.deleteMany({
-        where: {
-          status: {
-            in: ['No_Stock', 'Cancelled']
-          },
-          updatedAt: {
-            lt: threeDaysAgo
-          }
-        }
-      });
-    } catch (err) {
-      console.error("Error doing auto-cleanup of part requests:", err);
-    }
-
     return prisma.partRequest.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 100,
     });
   }
 

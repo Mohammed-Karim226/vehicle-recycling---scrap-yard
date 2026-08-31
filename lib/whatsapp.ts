@@ -1,5 +1,3 @@
-
-
 export function buildWhatsAppLink({
   recipientPhone,
   message,
@@ -90,6 +88,7 @@ export async function sendWhatsAppViaTwilio({
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: formData.toString(),
+      signal: AbortSignal.timeout(8_000),
     });
 
     if (!response.ok) {

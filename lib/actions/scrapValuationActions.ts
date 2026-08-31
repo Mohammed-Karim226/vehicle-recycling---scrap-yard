@@ -12,15 +12,45 @@ import {
 } from '@/lib/validation/schemas'
 import type { ScrapValuation, ScrapQuoteStatus } from '@prisma/client'
 import { lookupVehicle, DVLAError, type DVLAVehicleResponse, estimateWeightKg } from '@/lib/dvla'
+import { enforceRateLimit } from '@/lib/security/rateLimit'
 
 const scrapValuationService = new ScrapValuationService()
 const scrapMetalPriceService = new ScrapMetalPriceService()
+
+export type AdminScrapValuation = Omit<ScrapValuation, 'estimatedValue' | 'weightKg'> & { estimatedValue: number; weightKg: number }
+function toAdminScrapValuation(value: ScrapValuation): AdminScrapValuation {
+  return { ...value, estimatedValue: Number(value.estimatedValue), weightKg: Number(value.weightKg) }
+}
+
+export type PublicScrapValuation = {
+  trackingToken: string
+  vehicleName: string
+  registration: string
+  estimatedValue: number
+  status: ScrapValuation['status']
+  notes: string | null
+  createdAt: string
+}
+
+function toPublicScrapValuation(value: ScrapValuation): PublicScrapValuation {
+  const record = value as ScrapValuation & { trackingToken: string }
+  return {
+    trackingToken: record.trackingToken,
+    vehicleName: value.vehicleName,
+    registration: value.registration,
+    estimatedValue: Number(value.estimatedValue),
+    status: value.status,
+    notes: value.notes,
+    createdAt: value.createdAt.toISOString(),
+  }
+}
 
 export async function generateScrapValuation(
   registration: string,
   postcode: string
 ): Promise<{
   id?: string
+  trackingToken: string
   registration: string
   postcode: string
   vehicleName: string
@@ -37,6 +67,7 @@ export async function generateScrapValuation(
   return withActionError('generateScrapValuation', async () => {
     const parsed = quoteInputSchema.safeParse({ registration, postcode })
     if (!parsed.success) throw new ValidationError('Invalid registration or postcode')
+    await enforceRateLimit('generate-scrap-valuation', 10, 60 * 60)
 
     let dvlaData: DVLAVehicleResponse | null = null
 
@@ -85,8 +116,8 @@ export async function generateScrapValuation(
       const prices = await scrapMetalPriceService.getAllPrices()
       if (prices.length > 0) {
         // Use average price per kg of available metal types
-        const totalMinPrice = prices.reduce((sum, price) => sum + price.pricePerKgMin, 0)
-        const totalMaxPrice = prices.reduce((sum, price) => sum + price.pricePerKgMax, 0)
+        const totalMinPrice = prices.reduce((sum, price) => sum + Number(price.pricePerKgMin), 0)
+        const totalMaxPrice = prices.reduce((sum, price) => sum + Number(price.pricePerKgMax), 0)
         const avgPricePerKg = (totalMinPrice + totalMaxPrice) / (2 * prices.length)
         estimatedValue = Math.round(weightKg * avgPricePerKg)
       } else {
@@ -123,11 +154,12 @@ export async function generateScrapValuation(
 
     return {
       id: valuation.id,
+      trackingToken: (valuation as ScrapValuation & { trackingToken: string }).trackingToken,
       registration: valuation.registration,
       postcode: valuation.postcode,
       vehicleName: valuation.vehicleName,
-      estimatedValue: valuation.estimatedValue,
-      weightKg: valuation.weightKg,
+      estimatedValue: Number(valuation.estimatedValue),
+      weightKg: Number(valuation.weightKg),
       engineSize: valuation.engineSize,
       fuelType: valuation.fuelType,
       motStatus,
@@ -139,56 +171,63 @@ export async function generateScrapValuation(
   })
 }
 
-export async function getScrapValuationById(id: string): Promise<ScrapValuation | null> {
+export async function getScrapValuationById(id: string): Promise<AdminScrapValuation | null> {
   return withActionError('getScrapValuationById', async () => {
+    await requireAdmin()
     const parsedId = uuidSchema.safeParse(id)
     if (!parsedId.success) return null
-    return scrapValuationService.getValuationById(parsedId.data)
+    const value = await scrapValuationService.getValuationById(parsedId.data)
+    return value ? toAdminScrapValuation(value) : null
   })
 }
 
-export async function getAllScrapValuations(): Promise<ScrapValuation[]> {
+export async function getAllScrapValuations(): Promise<AdminScrapValuation[]> {
   return withActionError('getAllScrapValuations', async () => {
     await requireAdmin()
-    return scrapValuationService.getAllValuations()
+    return (await scrapValuationService.getAllValuations()).map(toAdminScrapValuation)
   })
 }
 
-export async function getValuationsByIds(scrapIds: string[]): Promise<ScrapValuation[]> {
+export async function getValuationsByIds(scrapIds: string[]): Promise<PublicScrapValuation[]> {
   return withActionError('getValuationsByIds', async () => {
     const parsed = uuidSchema.array().max(50).safeParse(scrapIds)
     if (!parsed.success) throw new ValidationError('Invalid valuation IDs')
-    return scrapValuationService.getValuationsByIds(parsed.data)
+    if (parsed.data.length === 0) return []
+    await enforceRateLimit('batch-scrap-valuations', 60, 60 * 60)
+    const rows = await scrapValuationService.getValuationsByTrackingTokens(parsed.data)
+    return rows.map(toPublicScrapValuation)
   })
 }
 
-export async function lookupScrapValuationById(id: string): Promise<ScrapValuation | null> {
+export async function lookupScrapValuationById(id: string): Promise<PublicScrapValuation | null> {
   return withActionError('lookupScrapValuationById', async () => {
+    await enforceRateLimit('lookup-scrap-valuation', 30, 60 * 60)
     const parsedId = uuidSchema.safeParse(id.trim())
     if (!parsedId.success) return null
-    return scrapValuationService.getValuationById(parsedId.data)
+    const rows = await scrapValuationService.getValuationsByTrackingTokens([parsedId.data])
+    return rows[0] ? toPublicScrapValuation(rows[0]) : null
   })
 }
 
 export async function updateScrapValuation(
   id: string,
   data: unknown
-): Promise<ScrapValuation> {
+): Promise<AdminScrapValuation> {
   return withActionError('updateScrapValuation', async () => {
     await requireAdmin()
     const parsedId = uuidSchema.safeParse(id)
     if (!parsedId.success) throw new ValidationError('Invalid valuation ID')
     const parsed = scrapValuationUpdateSchema.safeParse(data)
     if (!parsed.success) throw new ValidationError('Invalid update data')
-    return scrapValuationService.updateValuation(parsedId.data, parsed.data)
+    return toAdminScrapValuation(await scrapValuationService.updateValuation(parsedId.data, parsed.data))
   })
 }
 
-export async function deleteScrapValuation(id: string): Promise<ScrapValuation> {
+export async function deleteScrapValuation(id: string): Promise<AdminScrapValuation> {
   return withActionError('deleteScrapValuation', async () => {
     await requireAdmin()
     const parsedId = uuidSchema.safeParse(id)
     if (!parsedId.success) throw new ValidationError('Invalid valuation ID')
-    return scrapValuationService.deleteValuation(parsedId.data)
+    return toAdminScrapValuation(await scrapValuationService.deleteValuation(parsedId.data))
   })
 }

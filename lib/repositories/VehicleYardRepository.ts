@@ -12,7 +12,8 @@ export class VehicleYardRepository {
 
   async findAll(): Promise<VehicleYard[]> {
     return prisma.vehicleYard.findMany({
-      orderBy: { arrivedDate: 'desc' }
+      orderBy: [{ arrivedDate: 'desc' }, { id: 'desc' }],
+      take: 100,
     })
   }
 

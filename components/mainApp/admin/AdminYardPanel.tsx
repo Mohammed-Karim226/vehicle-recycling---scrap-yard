@@ -169,7 +169,6 @@ const AddVehicleForm = memo(function AddVehicleForm({
     reset,
     setValue,
     watch,
-    formState: { errors },
   } = useForm<AddVehicleSchema>({
     resolver: zodResolver(addVehicleSchema),
     defaultValues: {

@@ -202,7 +202,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
         
         if (!isMountedRef.current) return;
 
-        appendIdToStorage("rrs_my_part_ids", partRequest.id);
+        appendIdToStorage("rrs_my_part_ids", partRequest.trackingToken);
         dispatch({ type: "SUBMIT_SUCCESS" });
         onQuoteAdded();
 
