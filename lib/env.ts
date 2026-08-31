@@ -33,6 +33,7 @@ const envSchema = z
 export type Env = z.infer<typeof envSchema>;
 
 let cachedEnv: Env | null = null;
+const DEVELOPMENT_SESSION_SECRET = "dev-admin-session-secret-change-before-production";
 
 export function getEnv(): Env {
   if (cachedEnv) return cachedEnv;
@@ -42,7 +43,7 @@ export function getEnv(): Env {
     DIRECT_URL: process.env.DIRECT_URL,
     ADMIN_SESSION_SECRET:
       process.env.ADMIN_SESSION_SECRET ??
-      (process.env.NODE_ENV === "production" ? undefined : "dev-admin-session-secret"),
+      (process.env.NODE_ENV === "production" ? undefined : DEVELOPMENT_SESSION_SECRET),
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     DVLA_API_KEY: process.env.DVLA_API_KEY,

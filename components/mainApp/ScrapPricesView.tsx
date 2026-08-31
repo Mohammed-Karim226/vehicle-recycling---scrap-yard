@@ -85,7 +85,7 @@ export default function ScrapPricesView() {
             pricePerKgMax: Math.max(0.15, item.pricePerKgMax + offset),
             trend:
               Math.random() > 0.6
-                ? trendOptions[Math.floor(Math.random() * 3)]
+                ? (trendOptions[Math.floor(Math.random() * trendOptions.length)] ?? item.trend)
                 : item.trend,
           };
         })

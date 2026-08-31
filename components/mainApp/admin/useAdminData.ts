@@ -6,27 +6,24 @@ import type { VehicleYard as PrismaVehicleYard, PartRequest as PrismaPartRequest
 import type { AdminScrapValuation } from "@/lib/actions/scrapValuationActions";
 import type { SerializedScrapMetalPrice } from "@/lib/actions/scrapMetalPriceActions";
 import { 
-  getAllVehicleYards, 
   createVehicleYard, 
   updateVehicleYard, 
   deleteVehicleYard 
 } from "@/lib/actions/vehicleYardActions";
 import { 
-  getAllScrapValuations, 
   updateScrapValuation,
   deleteScrapValuation
 } from "@/lib/actions/scrapValuationActions";
 import { 
-  getAllPartRequests, 
   updatePartRequest,
   deletePartRequest
 } from "@/lib/actions/partRequestActions";
 import { 
-  getAllScrapMetalPrices, 
   createScrapMetalPrice,
   updateScrapMetalPrice,
   deleteScrapMetalPrice
 } from "@/lib/actions/scrapMetalPriceActions";
+import { getAdminDashboardData } from "@/lib/actions/adminDashboardActions";
 
 // Helper functions to convert Prisma types to app types
 function convertVehicleYard(prismaVehicle: PrismaVehicleYard): VehicleYard {
@@ -206,12 +203,12 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     setError(null);
 
     try {
-      const [prismaVehicles, prismaValuations, prismaRequests, prismaPrices] = await Promise.all([
-        getAllVehicleYards(),
-        getAllScrapValuations(),
-        getAllPartRequests(),
-        getAllScrapMetalPrices()
-      ]);
+      const {
+        vehicles: prismaVehicles,
+        scrapValuations: prismaValuations,
+        partRequests: prismaRequests,
+        scrapMetalPrices: prismaPrices,
+      } = await getAdminDashboardData();
 
       setVehicles(prismaVehicles.map(convertVehicleYard));
       setScrapQuotes(prismaValuations.map(convertScrapValuation));

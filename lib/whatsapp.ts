@@ -32,6 +32,10 @@ export interface WhatsAppMessageData {
   customerPhone?: string;
 }
 
+interface TwilioMessageResponse {
+  sid?: unknown;
+}
+
 export function buildScrapQuoteMessage(data: WhatsAppMessageData) {
   return `
 🚗 New Scrap Quote Request!
@@ -97,8 +101,8 @@ export async function sendWhatsAppViaTwilio({
       return { success: false, error: "Twilio request failed" };
     }
 
-    const result = await response.json();
-    return { success: true, sid: result.sid };
+    const result: TwilioMessageResponse = await response.json();
+    return { success: true, sid: typeof result.sid === "string" ? result.sid : undefined };
   } catch (error) {
     console.error("Failed to send WhatsApp via Twilio:", error);
     return { success: false, error: "Network error" };

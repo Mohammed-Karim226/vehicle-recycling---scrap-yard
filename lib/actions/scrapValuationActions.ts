@@ -13,6 +13,7 @@ import {
 import type { ScrapValuation, ScrapQuoteStatus } from '@prisma/client'
 import { lookupVehicle, DVLAError, type DVLAVehicleResponse, estimateWeightKg } from '@/lib/dvla'
 import { enforceRateLimit } from '@/lib/security/rateLimit'
+import { updateTag } from 'next/cache'
 
 const scrapValuationService = new ScrapValuationService()
 const scrapMetalPriceService = new ScrapMetalPriceService()
@@ -33,9 +34,8 @@ export type PublicScrapValuation = {
 }
 
 function toPublicScrapValuation(value: ScrapValuation): PublicScrapValuation {
-  const record = value as ScrapValuation & { trackingToken: string }
   return {
-    trackingToken: record.trackingToken,
+    trackingToken: value.trackingToken,
     vehicleName: value.vehicleName,
     registration: value.registration,
     estimatedValue: Number(value.estimatedValue),
@@ -151,10 +151,11 @@ export async function generateScrapValuation(
       status: 'Pending' as ScrapQuoteStatus,
       notes: notesStr,
     })
+    updateTag('submission-counts')
 
     return {
       id: valuation.id,
-      trackingToken: (valuation as ScrapValuation & { trackingToken: string }).trackingToken,
+      trackingToken: valuation.trackingToken,
       registration: valuation.registration,
       postcode: valuation.postcode,
       vehicleName: valuation.vehicleName,
@@ -228,6 +229,8 @@ export async function deleteScrapValuation(id: string): Promise<AdminScrapValuat
     await requireAdmin()
     const parsedId = uuidSchema.safeParse(id)
     if (!parsedId.success) throw new ValidationError('Invalid valuation ID')
-    return toAdminScrapValuation(await scrapValuationService.deleteValuation(parsedId.data))
+    const deleted = await scrapValuationService.deleteValuation(parsedId.data)
+    updateTag('submission-counts')
+    return toAdminScrapValuation(deleted)
   })
 }

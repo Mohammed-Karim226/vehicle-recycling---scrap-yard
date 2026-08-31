@@ -5,6 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Calendar, Loader2, Check, AlertCircle } from "lucide-react";
+import Image from "next/image";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
@@ -156,11 +157,14 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
                 </DialogHeader>
 
                 <div className="h-36 rounded-xl overflow-hidden border border-white/5 relative bg-slate-900">
-                  <img
+                  <Image
                     src={vehicle.image}
                     alt={`${vehicle.make} ${vehicle.model}`}
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="448px"
+                    unoptimized
+                    className="object-cover"
                   />
                 </div>
 

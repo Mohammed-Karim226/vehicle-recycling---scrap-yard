@@ -13,6 +13,7 @@ import {
 import type { PartRequest } from '@prisma/client'
 import { sendWhatsAppViaTwilio, buildScrapQuoteMessage } from '@/lib/whatsapp'
 import { enforceRateLimit } from '@/lib/security/rateLimit'
+import { updateTag } from 'next/cache'
 
 const partRequestService = new PartRequestService()
 
@@ -26,9 +27,8 @@ export type PublicPartRequest = {
 }
 
 function toPublicPartRequest(request: PartRequest): PublicPartRequest {
-  const record = request as PartRequest & { trackingToken: string }
   return {
-    trackingToken: record.trackingToken,
+    trackingToken: request.trackingToken,
     vehicleName: request.vehicleName,
     partsNeeded: request.partsNeeded,
     status: request.status,
@@ -50,7 +50,7 @@ export async function createPartRequest(
       fuelType: string
     }
   }
-): Promise<PartRequest & { trackingToken: string }> {
+): Promise<PartRequest> {
   return withActionError('createPartRequest', async () => {
     await enforceRateLimit('create-part-request', 10, 60 * 60)
     const parsed = partRequestCreateSchema.safeParse(data)
@@ -60,6 +60,7 @@ export async function createPartRequest(
       ...parsed.data,
       vehicleId: parsed.data.vehicleId ?? undefined,
     })
+    updateTag('submission-counts')
 
     // Try to send WhatsApp notification
     if (options?.valuationData) {
@@ -76,7 +77,7 @@ export async function createPartRequest(
       }
     }
 
-    return partRequest as PartRequest & { trackingToken: string }
+    return partRequest
   })
 }
 
@@ -139,6 +140,8 @@ export async function deletePartRequest(id: string): Promise<PartRequest> {
     await requireAdmin()
     const parsedId = uuidSchema.safeParse(id)
     if (!parsedId.success) throw new ValidationError('Invalid request ID')
-    return partRequestService.deleteRequest(parsedId.data)
+    const deleted = await partRequestService.deleteRequest(parsedId.data)
+    updateTag('submission-counts')
+    return deleted
   })
 }

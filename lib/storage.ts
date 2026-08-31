@@ -7,8 +7,9 @@ import { randomUUID } from "crypto";
 import { enforceRateLimit } from "./security/rateLimit";
 
 const BUCKET_NAME = "vehicle-images";
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+type SupportedImageMimeType = (typeof ALLOWED_MIME_TYPES)[number];
 
 function requireSupabase() {
   if (!isSupabaseConfigured()) {
@@ -21,10 +22,10 @@ export async function uploadImage(file: File): Promise<string> {
   await requireAdmin();
   await enforceRateLimit("image-upload", 20, 60 * 60);
   if (file.size > MAX_FILE_SIZE) {
-    throw new Error("File size exceeds maximum limit of 10MB");
+    throw new Error("File size exceeds maximum limit of 5MB");
   }
 
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+  if (!isSupportedImageMimeType(file.type)) {
     throw new Error("Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed");
   }
 
@@ -64,7 +65,11 @@ export async function deleteImage(filePath: string): Promise<void> {
   }
 }
 
-function detectImageType(bytes: Uint8Array): string | null {
+function isSupportedImageMimeType(value: string): value is SupportedImageMimeType {
+  return ALLOWED_MIME_TYPES.some((mimeType) => mimeType === value);
+}
+
+function detectImageType(bytes: Uint8Array): SupportedImageMimeType | null {
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
   if (bytes.slice(0, 8).every((value, index) => value === [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a][index])) return "image/png";
   const ascii = String.fromCharCode(...bytes);

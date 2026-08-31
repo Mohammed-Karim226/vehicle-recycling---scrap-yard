@@ -21,7 +21,7 @@ export class PartRequestRepository {
   async findByTrackingTokens(tokens: string[]): Promise<PartRequest[]> {
     if (tokens.length === 0) return []
     return prisma.partRequest.findMany({
-      where: { trackingToken: { in: tokens } } as never,
+      where: { trackingToken: { in: tokens } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 50,
     })

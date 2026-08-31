@@ -21,7 +21,7 @@ export class ScrapValuationRepository {
   async findByTrackingTokens(tokens: string[]): Promise<ScrapValuation[]> {
     if (tokens.length === 0) return []
     return prisma.scrapValuation.findMany({
-      where: { trackingToken: { in: tokens } } as never,
+      where: { trackingToken: { in: tokens } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 50,
     })
