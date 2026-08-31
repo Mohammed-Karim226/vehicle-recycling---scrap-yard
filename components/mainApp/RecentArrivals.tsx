@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import type { VehicleYard } from "@/types/types";
 import type { VehicleYard as PrismaVehicleYard } from "@prisma/client";
@@ -77,13 +78,13 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
           </h2>
         </div>
 
-        <button
+        <Button
           onClick={() => setCurrentTab("parts")}
           className="text-red-400 hover:text-red-350 text-xs font-mono font-bold uppercase flex items-center space-x-1.5 hover:underline cursor-pointer"
         >
           <span>Browse All Spares</span>
           <ArrowRight className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
 
       <div
@@ -117,12 +118,12 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
               <p className="text-[10px] text-slate-400 font-mono font-medium">
                 Arrived: {vehicle.arrivedDate}
               </p>
-              <button
+              <Button
                 onClick={() => setCurrentTab("parts")}
                 className="text-[10px] text-red-400 font-mono font-bold tracking-widest uppercase pt-3.5 block hover:text-red-300 text-left cursor-pointer border-t border-white/[0.03] mt-2.5"
               >
                 Request parts from this car →
-              </button>
+              </Button>
             </div>
           </motion.div>
         ))}

@@ -16,6 +16,7 @@ import AdminPartsPanel from "./AdminPartsPanel";
 import AdminYardPanel from "./AdminYardPanel";
 import AdminPricesPanel from "./AdminPricesPanel";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 // ────────────────────────────────────────────────────────────
 // Tab definitions
@@ -109,7 +110,7 @@ export default function AdminDashboardView({ onRefreshTrigger }: AdminDashboardV
         </div>
 
         <div className="flex items-center space-x-3">
-          <button
+          <Button
             id="admin-sync-btn"
             onClick={data.fetchAllData}
             disabled={data.loading}
@@ -119,14 +120,14 @@ export default function AdminDashboardView({ onRefreshTrigger }: AdminDashboardV
               className={`h-3 w-3 ${data.loading ? "animate-spin text-red-400" : ""}`}
             />
             <span>Sync DB</span>
-          </button>
-          <button
+          </Button>
+          <Button
             id="admin-logout-btn"
             onClick={auth.handleLogout}
             className="bg-slate-900 hover:bg-red-950/20 text-slate-400 hover:text-red-400 text-[10px] font-mono font-bold px-3.5 py-2 rounded-xl border border-white/5 transition-all cursor-pointer"
           >
             Lock Terminal
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -141,21 +142,21 @@ export default function AdminDashboardView({ onRefreshTrigger }: AdminDashboardV
             <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
             <span className="text-xs text-red-300 font-mono">{data.error}</span>
           </div>
-          <button
+          <Button
             onClick={data.clearError}
             className="text-red-400 hover:text-white transition-colors cursor-pointer"
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </motion.div>
       )}
 
       {/* Tab navigation */}
-      <div className="flex overflow-x-auto bg-slate-950/50 p-1.5 rounded-2xl border border-white/5 whitespace-nowrap scrollbar-none">
+      <div className="app-scrollbar flex overflow-x-auto bg-slate-950/50 p-1.5 rounded-2xl border border-white/5 whitespace-nowrap">
         {TABS.map((tab) => {
           const count = tab.count ? getTabCount(tab.id) : null;
           return (
-            <button
+            <Button
               key={tab.id}
               id={`admin-tab-${tab.id}`}
               onClick={() => handleTabChange(tab.id)}
@@ -177,7 +178,7 @@ export default function AdminDashboardView({ onRefreshTrigger }: AdminDashboardV
                   {count}
                 </span>
               )}
-            </button>
+            </Button>
           );
         })}
       </div>

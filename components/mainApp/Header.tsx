@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Car, Hammer, Search, Info, ClipboardList, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScrapQuoteDialog from "./ScrapQuoteDialog";
+import { Button } from "@/components/ui/button";
 
 
 interface HeaderProps {
@@ -53,7 +54,7 @@ export default function Header({ currentTab, setCurrentTab, requestCount }: Head
             const Icon = item.icon;
             const isActive = currentTab === item.id;
             return (
-              <button
+              <Button
                 key={item.id}
                 id={`nav-${item.id}`}
                 onClick={() => setCurrentTab(item.id)}
@@ -78,14 +79,14 @@ export default function Header({ currentTab, setCurrentTab, requestCount }: Head
                     {requestCount}
                   </span>
                 )}
-              </button>
+              </Button>
             );
           })}
         </nav>
 
         <div className="flex items-center space-x-3">
          <ScrapQuoteDialog onQuoteAdded={() => setCurrentTab("requests")}>
-            <button
+            <Button
               id="nav-get-quote-cta"
               className="group relative bg-gradient-to-r from-red-600 via-pink-600 to-amber-500 p-[1px] rounded-xl hover:shadow-[0_0_25px_-5px_rgba(239,68,68,0.5)] transition-all active:scale-95 duration-300 cursor-pointer"
             >
@@ -97,45 +98,57 @@ export default function Header({ currentTab, setCurrentTab, requestCount }: Head
                   →
                 </span>
               </div>
-            </button>
+            </Button>
           </ScrapQuoteDialog>
         </div>
       </div>
 
-      <div className="md:hidden flex overflow-x-auto justify-around bg-slate-950/60 border-t border-white/5 py-2 backdrop-blur-xl" id="mobile-nav">
+      <nav
+        aria-label="Mobile navigation"
+        className="grid grid-cols-6 border-t border-white/5 bg-slate-950/60 px-2 py-2 backdrop-blur-xl md:hidden"
+        id="mobile-nav"
+      >
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;
           return (
-            <button
+            <Button
               key={item.id}
               id={`nav-mob-${item.id}`}
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
+              title={item.label}
               onClick={() => setCurrentTab(item.id)}
               className={cn(
-                "flex flex-col items-center space-y-1 relative px-4 py-1.5 rounded-lg transition-all",
-                isActive ? "text-red-400" : "text-slate-500 hover:text-slate-300"
+                "relative mx-auto size-10 rounded-lg transition-colors",
+                isActive
+                  ? "text-red-400 hover:bg-white/5 hover:text-red-300"
+                  : "text-slate-500 hover:bg-white/5 hover:text-slate-200"
               )}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeTabIndicatorMobile"
                   transition={{type:"spring"}}
-                  className="absolute inset-0 bg-white/5 border border-white/10 rounded-lg pointer-events-none"
+                  className="pointer-events-none absolute inset-0 rounded-lg border border-white/10 bg-white/5"
                 />
               )}
               <div className="relative z-10">
-                <Icon className="h-4.5 w-4.5" />
+                <Icon className="size-[18px]" aria-hidden="true" />
                 {item.id === "requests" && requestCount > 0 && (
                   <span className="absolute -top-1.5 -right-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-[7px] font-black text-white font-mono">
                     {requestCount}
                   </span>
                 )}
               </div>
-              <span className="text-[9px] font-mono tracking-wider font-medium uppercase relative z-10">{item.label}</span>
-            </button>
+              <span className="sr-only">{item.label}</span>
+            </Button>
           );
         })}
-      </div>
+      </nav>
     </header>
   );
 }

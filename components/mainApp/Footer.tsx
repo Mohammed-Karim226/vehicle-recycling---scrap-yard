@@ -1,6 +1,7 @@
 "use client";
 
 import { MapPin, Phone, Mail, Clock, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface FooterProps {
   setCurrentTab: (tab: string) => void;
@@ -69,36 +70,36 @@ export default function Footer({ setCurrentTab }: FooterProps) {
           </h3>
           <ul className="space-y-2 text-xs font-mono">
             <li>
-              <button
+              <Button variant="link"
                 onClick={() => setCurrentTab("parts")}
                 className="hover:text-white hover:underline transition-colors text-left cursor-pointer"
               >
                 Search In-Yard Vehicles
-              </button>
+              </Button>
             </li>
             <li>
-              <button
+              <Button variant="link"
                 onClick={() => setCurrentTab("prices")}
                 className="hover:text-white hover:underline transition-colors text-left cursor-pointer"
               >
                 Real-Time Scrap Rates
-              </button>
+              </Button>
             </li>
             <li>
-              <button
+              <Button variant="link"
                 onClick={() => setCurrentTab("about")}
                 className="hover:text-white hover:underline transition-colors text-left cursor-pointer"
               >
                 How It Works & Salvage Yard
-              </button>
+              </Button>
             </li>
             <li>
-              <button
+              <Button variant="link"
                 onClick={() => setCurrentTab("requests")}
                 className="hover:text-white hover:underline transition-colors text-left cursor-pointer font-bold text-red-400"
               >
                 Track My Requests Live
-              </button>
+              </Button>
             </li>
           </ul>
         </div>

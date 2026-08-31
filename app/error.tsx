@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Error({
   error,
@@ -16,7 +18,8 @@ export default function Error({
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="max-w-md w-full bg-slate-900/80 border border-white/10 rounded-2xl p-8 text-center space-y-5">
+      <Card className="max-w-md w-full bg-slate-900/80 border-white/10 text-center">
+        <CardContent className="space-y-5 p-8">
         <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
         <div className="space-y-2">
           <h1 className="text-xl font-black text-white uppercase tracking-tight">
@@ -26,14 +29,15 @@ export default function Error({
             An unexpected error occurred. You can try again or refresh the page.
           </p>
         </div>
-        <button
+        <Button
           onClick={reset}
           className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-xs font-mono font-bold uppercase px-5 py-2.5 rounded-xl transition-all cursor-pointer"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Try again
-        </button>
-      </div>
+        </Button>
+        </CardContent>
+      </Card>
     </main>
   );
 }

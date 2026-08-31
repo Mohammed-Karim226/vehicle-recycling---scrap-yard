@@ -104,4 +104,57 @@
     color: #f8fafc;
     font-family: var(--font-sans);
   }
+
+  input[type="number"] {
+    appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+  }
+}
+
+@layer utilities {
+  /* Visible, compact overflow feedback shared by app and shadcn surfaces. */
+  * {
+    scrollbar-color: rgb(239 68 68 / 0.8) rgb(15 23 42 / 0.72);
+    scrollbar-width: thin;
+  }
+
+  .app-scrollbar {
+    scrollbar-gutter: stable;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: rgb(15 23 42 / 0.72);
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    min-width: 32px;
+    min-height: 32px;
+    background: rgb(239 68 68 / 0.8);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(248 113 113 / 0.95);
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background-color: rgb(220 38 38);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }

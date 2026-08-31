@@ -3,6 +3,9 @@
 import { FormEvent, memo, useCallback, useState } from "react";
 import { AlertCircle, Lock, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface AdminLoginGateProps {
   loginError: string;
@@ -38,10 +41,10 @@ function AdminLoginGateInner({ loginError, isLocked, cooldownRemaining, onLogin 
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
-          <label className="block text-[10px] text-slate-400 font-mono uppercase tracking-wider" htmlFor="admin-email-input">
+          <Label className="block text-[10px] text-slate-400 font-mono uppercase tracking-wider" htmlFor="admin-email-input">
             Admin Email
-          </label>
-          <input
+          </Label>
+          <Input
             id="admin-email-input"
             type="email"
             value={email}
@@ -53,10 +56,10 @@ function AdminLoginGateInner({ loginError, isLocked, cooldownRemaining, onLogin 
             className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-500 disabled:opacity-50"
           />
 
-          <label className="block text-[10px] text-slate-400 font-mono uppercase tracking-wider" htmlFor="admin-password-input">
+          <Label className="block text-[10px] text-slate-400 font-mono uppercase tracking-wider" htmlFor="admin-password-input">
             Password
-          </label>
-          <input
+          </Label>
+          <Input
             id="admin-password-input"
             type="password"
             value={password}
@@ -80,14 +83,14 @@ function AdminLoginGateInner({ loginError, isLocked, cooldownRemaining, onLogin 
             </p>
           )}
 
-          <button
+          <Button
             id="admin-login-btn"
             type="submit"
             disabled={isLocked || !email.trim() || password.length < 8}
             className="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-widest font-mono disabled:opacity-50"
           >
             Sign In
-          </button>
+          </Button>
         </form>
       </motion.div>
     </div>

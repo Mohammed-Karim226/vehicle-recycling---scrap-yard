@@ -196,7 +196,7 @@ export default function ScrapPricesView() {
             Non-Ferrous Metals Index
           </h3>
 
-          <div className="overflow-x-auto">
+          <div className="app-scrollbar overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-white/5 text-slate-500 font-mono text-[10px] uppercase tracking-wider">
