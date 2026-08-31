@@ -31,6 +31,13 @@ export class ValidationError extends AppError {
   }
 }
 
+export class RateLimitError extends AppError {
+  constructor(message = "Too many requests. Please wait and try again.") {
+    super(message, "RATE_LIMITED", 429);
+    this.name = "RateLimitError";
+  }
+}
+
 export function isPrismaNotFoundError(error: unknown): boolean {
   return (
     typeof error === "object" &&

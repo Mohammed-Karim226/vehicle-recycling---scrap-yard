@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 
 import Header from "./Header";
 import Footer from "./Footer";
@@ -7,12 +8,22 @@ import { AnimatePresence, motion } from "motion/react";
 import ScrapQuoteSection from "./ScrapQuoteSection";
 import UspCoreValues from "./UspCoreValues";
 import RecentArrivals from "./RecentArrivals";
-import FindPartsView from "./FindPartsView";
-import ScrapPricesView from "./ScrapPricesView";
-import AboutContactView from "./AboutContactView";
-import MyRequestsView from "./MyRequestsView";
-import AdminDashboardView from "./admin/AdminDashboardView";
 import { getSubmissionCounts } from "@/lib/actions";
+
+const TabLoading = () => (
+  <div className="flex min-h-80 items-center justify-center" role="status">
+    <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/15 border-t-red-500" />
+    <span className="sr-only">Loading view</span>
+  </div>
+);
+
+const FindPartsView = dynamic(() => import("./FindPartsView"), { loading: TabLoading });
+const ScrapPricesView = dynamic(() => import("./ScrapPricesView"), { loading: TabLoading });
+const AboutContactView = dynamic(() => import("./AboutContactView"), { loading: TabLoading });
+const MyRequestsView = dynamic(() => import("./MyRequestsView"), { loading: TabLoading });
+const AdminDashboardView = dynamic(() => import("./admin/AdminDashboardView"), {
+  loading: TabLoading,
+});
 
 const HomePage = () => {
   const [currentTab, setCurrentTab] = useState<string>("home");

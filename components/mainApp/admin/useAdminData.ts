@@ -1,24 +1,29 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { VehicleYard, ScrapValuationResult, PartQuoteSubmitted } from "@/types/types";
-import type { VehicleYard as PrismaVehicleYard, ScrapValuation as PrismaScrapValuation, PartRequest as PrismaPartRequest, VehicleStatus, ScrapQuoteStatus, PartRequestStatus } from "@prisma/client";
+import type { VehicleYard, ScrapValuationResult, PartQuoteSubmitted, ScrapMetalPrice } from "@/types/types";
+import type { VehicleYard as PrismaVehicleYard, PartRequest as PrismaPartRequest, VehicleStatus, ScrapQuoteStatus, PartRequestStatus, Prisma as PrismaTypes } from "@prisma/client";
+import type { AdminScrapValuation } from "@/lib/actions/scrapValuationActions";
+import type { SerializedScrapMetalPrice } from "@/lib/actions/scrapMetalPriceActions";
 import { 
-  getAllVehicleYards, 
   createVehicleYard, 
   updateVehicleYard, 
   deleteVehicleYard 
 } from "@/lib/actions/vehicleYardActions";
 import { 
-  getAllScrapValuations, 
   updateScrapValuation,
   deleteScrapValuation
 } from "@/lib/actions/scrapValuationActions";
 import { 
-  getAllPartRequests, 
   updatePartRequest,
   deletePartRequest
 } from "@/lib/actions/partRequestActions";
+import { 
+  createScrapMetalPrice,
+  updateScrapMetalPrice,
+  deleteScrapMetalPrice
+} from "@/lib/actions/scrapMetalPriceActions";
+import { getAdminDashboardData } from "@/lib/actions/adminDashboardActions";
 
 // Helper functions to convert Prisma types to app types
 function convertVehicleYard(prismaVehicle: PrismaVehicleYard): VehicleYard {
@@ -35,7 +40,7 @@ function convertVehicleYard(prismaVehicle: PrismaVehicleYard): VehicleYard {
   };
 }
 
-function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValuationResult {
+function convertScrapValuation(prismaValuation: AdminScrapValuation): ScrapValuationResult {
   let mappedStatus = "Pending Inspection";
   if (prismaValuation.status === "Completed") {
     mappedStatus = "Collected";
@@ -50,8 +55,8 @@ function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValu
     registration: prismaValuation.registration,
     postcode: prismaValuation.postcode,
     vehicleName: prismaValuation.vehicleName,
-    estimatedValue: prismaValuation.estimatedValue,
-    weightKg: prismaValuation.weightKg,
+    estimatedValue: Number(prismaValuation.estimatedValue),
+    weightKg: Number(prismaValuation.weightKg),
     engineSize: prismaValuation.engineSize,
     fuelType: prismaValuation.fuelType,
     status: mappedStatus,
@@ -69,6 +74,18 @@ function convertPartRequest(prismaRequest: PrismaPartRequest): PartQuoteSubmitte
     phone: prismaRequest.phone,
     status: prismaRequest.status.replace("_", " ") as PartQuoteSubmitted["status"],
     notes: prismaRequest.notes ?? undefined
+  };
+}
+
+function convertScrapMetalPrice(prismaPrice: SerializedScrapMetalPrice): ScrapMetalPrice {
+  return {
+    id: prismaPrice.id,
+    category: prismaPrice.category,
+    pricePerKgMin: Number(prismaPrice.pricePerKgMin),
+    pricePerKgMax: Number(prismaPrice.pricePerKgMax),
+    trend: prismaPrice.trend,
+    createdAt: prismaPrice.createdAt.toISOString(),
+    updatedAt: prismaPrice.updatedAt.toISOString(),
   };
 }
 
@@ -108,6 +125,13 @@ export interface NewVehicleFormData {
   image: string;
 }
 
+export interface NewPriceFormData {
+  category: string;
+  pricePerKgMin: number;
+  pricePerKgMax: number;
+  trend: "Rising" | "Stable" | "Falling";
+}
+
 export const INITIAL_VEHICLE_FORM: NewVehicleFormData = {
   make: "",
   model: "",
@@ -123,6 +147,13 @@ export const INITIAL_VEHICLE_FORM: NewVehicleFormData = {
   image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=600&auto=format&fit=crop",
 };
 
+export const INITIAL_PRICE_FORM: NewPriceFormData = {
+  category: "",
+  pricePerKgMin: 0,
+  pricePerKgMax: 0,
+  trend: "Stable"
+};
+
 // ────────────────────────────────────────────────────────────
 // Hook return type
 // ────────────────────────────────────────────────────────────
@@ -131,6 +162,7 @@ export interface UseAdminDataReturn {
   vehicles: VehicleYard[];
   scrapQuotes: ScrapValuationResult[];
   partRequests: PartQuoteSubmitted[];
+  scrapMetalPrices: ScrapMetalPrice[];
 
   // State
   loading: boolean;
@@ -139,13 +171,16 @@ export interface UseAdminDataReturn {
 
   // Actions
   fetchAllData: () => Promise<void>;
-  handleUpdateScrapStatus: (quoteId: string, status: string, notes: string) => Promise<void>;
+  handleUpdateScrapStatus: (quoteId: string, status: string, notes: string, estimatedValue?: number) => Promise<void>;
   handleUpdatePartStatus: (requestId: string, status: string, notes: string) => Promise<void>;
   handleUpdateYardStatus: (vehicleId: string, status: string) => Promise<void>;
   handleDeleteYardVehicle: (vehicleId: string) => Promise<boolean>;
   handleDeleteScrapQuote: (quoteId: string) => Promise<boolean>;
   handleDeletePartRequest: (requestId: string) => Promise<boolean>;
   handleAddYardVehicle: (formData: NewVehicleFormData) => Promise<boolean>;
+  handleAddPrice: (formData: NewPriceFormData) => Promise<boolean>;
+  handleUpdatePrice: (id: string, formData: Partial<NewPriceFormData>) => Promise<boolean>;
+  handleDeletePrice: (id: string) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -156,6 +191,7 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
   const [vehicles, setVehicles] = useState<VehicleYard[]>([]);
   const [scrapQuotes, setScrapQuotes] = useState<ScrapValuationResult[]>([]);
   const [partRequests, setPartRequests] = useState<PartQuoteSubmitted[]>([]);
+  const [scrapMetalPrices, setScrapMetalPrices] = useState<ScrapMetalPrice[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -167,15 +203,17 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     setError(null);
 
     try {
-      const [prismaVehicles, prismaValuations, prismaRequests] = await Promise.all([
-        getAllVehicleYards(),
-        getAllScrapValuations(),
-        getAllPartRequests()
-      ]);
+      const {
+        vehicles: prismaVehicles,
+        scrapValuations: prismaValuations,
+        partRequests: prismaRequests,
+        scrapMetalPrices: prismaPrices,
+      } = await getAdminDashboardData();
 
       setVehicles(prismaVehicles.map(convertVehicleYard));
       setScrapQuotes(prismaValuations.map(convertScrapValuation));
       setPartRequests(prismaRequests.map(convertPartRequest));
+      setScrapMetalPrices(prismaPrices.map(convertScrapMetalPrice));
     } catch (e: unknown) {
       console.error("Failed to sync dashboard:", e);
       setError("Failed to load data.");
@@ -186,17 +224,21 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
 
   // ── Scrap status update ──
   const handleUpdateScrapStatus = useCallback(
-    async (quoteId: string, status: string, notes: string) => {
+    async (quoteId: string, status: string, notes: string, estimatedValue?: number) => {
       setActionLoading(quoteId);
       try {
         const prismaStatus = appToPrismaScrapQuoteStatus(status);
-        const updatedValuation = await updateScrapValuation(quoteId, { status: prismaStatus, notes });
+        const updateData: PrismaTypes.ScrapValuationUpdateInput = { status: prismaStatus, notes };
+        if (estimatedValue !== undefined) {
+          updateData.estimatedValue = estimatedValue;
+        }
+        const updatedValuation = await updateScrapValuation(quoteId, updateData);
         setScrapQuotes((prev) =>
           prev.map((q) => (q.id === quoteId ? convertScrapValuation(updatedValuation) : q))
         );
         onRefreshTrigger?.();
       } catch {
-        setError("Failed to update scrap quote status.");
+        setError("Failed to update scrap quote.");
       } finally {
         setActionLoading(null);
       }
@@ -329,10 +371,70 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     [onRefreshTrigger]
   );
 
+  // ── Add price ──
+  const handleAddPrice = useCallback(
+    async (formData: NewPriceFormData): Promise<boolean> => {
+      setActionLoading("add-price");
+      try {
+        const added = await createScrapMetalPrice(formData);
+        setScrapMetalPrices((prev) => [convertScrapMetalPrice(added), ...prev]);
+        onRefreshTrigger?.();
+        return true;
+      } catch {
+        setError("Failed to add price.");
+        return false;
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [onRefreshTrigger]
+  );
+
+  // ── Update price ──
+  const handleUpdatePrice = useCallback(
+    async (id: string, formData: Partial<NewPriceFormData>): Promise<boolean> => {
+      setActionLoading(`update-price-${id}`);
+      try {
+        const updated = await updateScrapMetalPrice(id, formData);
+        setScrapMetalPrices((prev) =>
+          prev.map((p) => (p.id === id ? convertScrapMetalPrice(updated) : p))
+        );
+        onRefreshTrigger?.();
+        return true;
+      } catch {
+        setError("Failed to update price.");
+        return false;
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [onRefreshTrigger]
+  );
+
+  // ── Delete price ──
+  const handleDeletePrice = useCallback(
+    async (id: string): Promise<boolean> => {
+      setActionLoading(`del-price-${id}`);
+      try {
+        await deleteScrapMetalPrice(id);
+        setScrapMetalPrices((prev) => prev.filter((p) => p.id !== id));
+        onRefreshTrigger?.();
+        return true;
+      } catch {
+        setError("Failed to delete price.");
+        return false;
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [onRefreshTrigger]
+  );
+
   return {
     vehicles,
     scrapQuotes,
     partRequests,
+    scrapMetalPrices,
     loading,
     actionLoading,
     error,
@@ -344,6 +446,9 @@ export function useAdminData(onRefreshTrigger?: () => void): UseAdminDataReturn 
     handleDeleteScrapQuote,
     handleDeletePartRequest,
     handleAddYardVehicle,
+    handleAddPrice,
+    handleUpdatePrice,
+    handleDeletePrice,
     clearError,
   };
 }

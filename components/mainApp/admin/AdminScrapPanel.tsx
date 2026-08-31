@@ -27,7 +27,7 @@ interface AdminScrapPanelProps {
 interface QuoteRowCardProps {
   quote: ScrapValuationResult;
   actionLoading: string | null;
-  onUpdate: (quoteId: string, status: string, notes: string) => Promise<void>;
+  onUpdate: (quoteId: string, status: string, notes: string, estimatedValue?: number) => Promise<void>;
   onDelete?: (quoteId: string) => Promise<boolean>;
 }
 
@@ -39,6 +39,7 @@ const QuoteRowCard = memo(function QuoteRowCard({
 }: QuoteRowCardProps) {
   const [notes, setNotes] = useState(quote.notes || "");
   const [status, setStatus] = useState(quote.status || "Pending Inspection");
+  const [estimatedValue, setEstimatedValue] = useState(quote.estimatedValue.toString());
   const [dirty, setDirty] = useState(false);
 
   const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -46,12 +47,19 @@ const QuoteRowCard = memo(function QuoteRowCard({
     setDirty(true);
   }, []);
 
+  const handleValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEstimatedValue(e.target.value);
+    setDirty(true);
+  }, []);
+
   const handleCommit = useCallback(() => {
     if (!quote.id) return;
-    onUpdate(quote.id, status, notes);
-  }, [quote.id, status, notes, onUpdate]);
+    const parsedValue = parseFloat(estimatedValue);
+    if (isNaN(parsedValue)) return;
+    onUpdate(quote.id, status, notes, parsedValue);
+  }, [quote.id, status, notes, estimatedValue, onUpdate]);
 
-  const isModified = dirty || quote.notes !== notes || quote.status !== status;
+  const isModified = dirty || quote.notes !== notes || quote.status !== status || parseFloat(estimatedValue) !== quote.estimatedValue;
   const isLoading = actionLoading === quote.id;
 
   return (
@@ -93,13 +101,19 @@ const QuoteRowCard = memo(function QuoteRowCard({
       </div>
 
       <div className="md:w-60 flex flex-col justify-between items-stretch md:items-end gap-3 md:text-right">
-        <div>
-          <span className="text-[10px] text-slate-500 font-mono uppercase block">
-            Calculated Worth
+        <div className="space-y-1">
+          <span className="text-[10px] text-slate-500 font-mono uppercase block text-left md:text-right">
+            Scrap Value (£)
           </span>
-          <span className="text-emerald-400 font-mono font-extrabold text-2xl">
-            £{quote.estimatedValue}
-          </span>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">£</span>
+            <input
+              type="number"
+              value={estimatedValue}
+              onChange={handleValueChange}
+              className="w-full bg-slate-950 border border-white/5 rounded-lg pl-8 pr-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500/50 transition-colors font-mono"
+            />
+          </div>
         </div>
 
         <div className="space-y-2.5 w-full">

@@ -5,6 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "motion/react";
+import Image from "next/image";
 import { Search, Loader2, ArrowRight, AlertCircle, Check } from "lucide-react";
 
 import {
@@ -202,7 +203,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
         
         if (!isMountedRef.current) return;
 
-        appendIdToStorage("rrs_my_part_ids", partRequest.id);
+        appendIdToStorage("rrs_my_part_ids", partRequest.trackingToken);
         dispatch({ type: "SUBMIT_SUCCESS" });
         onQuoteAdded();
 
@@ -358,11 +359,14 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                 id={`vehicle-card-${vehicle.id}`}
               >
                 <div className="relative h-48 bg-slate-900 overflow-hidden">
-                  <img
+                  <Image
                     src={vehicle.image}
                     alt={`${vehicle.make} ${vehicle.model}`}
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    unoptimized
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
 
                   <div className="absolute top-3 right-3 bg-slate-950/95 text-emerald-400 border border-white/10 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider px-3 py-1 relative z-10 flex items-center space-x-1.5 shadow-lg">

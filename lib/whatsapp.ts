@@ -1,5 +1,3 @@
-
-
 export function buildWhatsAppLink({
   recipientPhone,
   message,
@@ -32,6 +30,10 @@ export interface WhatsAppMessageData {
   engineSize: string;
   fuelType: string;
   customerPhone?: string;
+}
+
+interface TwilioMessageResponse {
+  sid?: unknown;
 }
 
 export function buildScrapQuoteMessage(data: WhatsAppMessageData) {
@@ -90,6 +92,7 @@ export async function sendWhatsAppViaTwilio({
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: formData.toString(),
+      signal: AbortSignal.timeout(8_000),
     });
 
     if (!response.ok) {
@@ -98,8 +101,8 @@ export async function sendWhatsAppViaTwilio({
       return { success: false, error: "Twilio request failed" };
     }
 
-    const result = await response.json();
-    return { success: true, sid: result.sid };
+    const result: TwilioMessageResponse = await response.json();
+    return { success: true, sid: typeof result.sid === "string" ? result.sid : undefined };
   } catch (error) {
     console.error("Failed to send WhatsApp via Twilio:", error);
     return { success: false, error: "Network error" };

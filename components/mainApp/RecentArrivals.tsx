@@ -2,7 +2,9 @@
 
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import type { VehicleYard } from "@/types/types";
 import type { VehicleYard as PrismaVehicleYard } from "@prisma/client";
 import { getAllVehicleYards } from "@/lib/actions/vehicleYardActions";
@@ -77,13 +79,13 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
           </h2>
         </div>
 
-        <button
+        <Button
           onClick={() => setCurrentTab("parts")}
           className="text-red-400 hover:text-red-350 text-xs font-mono font-bold uppercase flex items-center space-x-1.5 hover:underline cursor-pointer"
         >
           <span>Browse All Spares</span>
           <ArrowRight className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
 
       <div
@@ -97,11 +99,14 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
             className="bg-slate-950/45 backdrop-blur-md border border-white/5 hover:border-red-500/25 rounded-2xl overflow-hidden group transition-all text-left"
           >
             <div className="h-44 bg-slate-900 relative">
-              <img
+              <Image
                 src={vehicle.image}
                 alt={`${vehicle.make} ${vehicle.model}`}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                fill
+                sizes="(min-width: 768px) 33vw, 100vw"
+                unoptimized
+                className="object-cover group-hover:scale-102 transition-transform duration-300"
               />
               <span className="absolute top-3 left-3 bg-red-650 text-white text-[9px] font-mono font-black uppercase py-0.5 px-2.5 rounded-full border border-white/10 shadow-lg">
                 New Stock
@@ -117,12 +122,12 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
               <p className="text-[10px] text-slate-400 font-mono font-medium">
                 Arrived: {vehicle.arrivedDate}
               </p>
-              <button
+              <Button
                 onClick={() => setCurrentTab("parts")}
                 className="text-[10px] text-red-400 font-mono font-bold tracking-widest uppercase pt-3.5 block hover:text-red-300 text-left cursor-pointer border-t border-white/[0.03] mt-2.5"
               >
                 Request parts from this car →
-              </button>
+              </Button>
             </div>
           </motion.div>
         ))}

@@ -12,7 +12,7 @@ export interface UseAdminAuthReturn {
   attempts: number;
   cooldownRemaining: number;
   isLocked: boolean;
-  handleLogin: (pin: string) => Promise<void>;
+  handleLogin: (email: string, password: string) => Promise<void>;
   handleLogout: () => Promise<void>;
 }
 
@@ -59,16 +59,21 @@ export function useAdminAuth(): UseAdminAuthReturn {
   const isLocked = cooldownRemaining > 0;
 
   const handleLogin = useCallback(
-    async (pin: string) => {
+    async (email: string, password: string) => {
       if (isLocked) return;
 
       try {
-        const result = await adminLogin(pin);
+        const result = await adminLogin(email, password);
         if (result.success) {
           setIsAdmin(true);
           setLoginError("");
           setAttempts(0);
         } else {
+          if (result.error.startsWith("Too many requests")) {
+            setLoginError(result.error);
+            return;
+          }
+
           const newAttempts = attempts + 1;
           setAttempts(newAttempts);
 
@@ -76,9 +81,7 @@ export function useAdminAuth(): UseAdminAuthReturn {
             setLoginError(`Too many failed attempts. Locked for ${COOLDOWN_SECONDS}s.`);
             startCooldown();
           } else {
-            setLoginError(
-              `Invalid credentials. ${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMPTS - newAttempts === 1 ? "" : "s"} remaining.`
-            );
+            setLoginError(`${result.error}. ${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMPTS - newAttempts === 1 ? "" : "s"} remaining.`);
           }
         }
       } catch {

@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
 import { motion } from "motion/react";
+import Image from "next/image";
 import { Search, Sliders, Trash2, Plus, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { VehicleYard } from "@/types/types";
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { uploadImage } from "@/lib/storage";
 
 // ────────────────────────────────────────────────────────────
 // Zod Schema
@@ -97,13 +99,17 @@ const VehicleCard = memo(function VehicleCard({
       whileHover={{ y: -2 }}
     >
       <div className="flex gap-4 p-4">
-        <img
-          src={vehicle.image}
-          alt={`${vehicle.make} ${vehicle.model}`}
-          referrerPolicy="no-referrer"
-          loading="lazy"
-          className="h-16 w-20 rounded-lg object-cover border border-white/10 shrink-0"
-        />
+        <div className="relative h-16 w-20 overflow-hidden rounded-lg border border-white/10 shrink-0">
+          <Image
+            src={vehicle.image}
+            alt={`${vehicle.make} ${vehicle.model}`}
+            referrerPolicy="no-referrer"
+            fill
+            sizes="80px"
+            unoptimized
+            className="object-cover"
+          />
+        </div>
         <div className="space-y-1.5 text-left">
           <span className="text-[8px] text-red-500 font-mono uppercase bg-red-950/50 px-2 py-0.5 rounded border border-red-900/30 font-bold">
             ID: {vehicle.id}
@@ -161,6 +167,8 @@ const AddVehicleForm = memo(function AddVehicleForm({
 }: AddVehicleFormProps) {
   const [showSuccess, setShowSuccess] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
@@ -168,8 +176,6 @@ const AddVehicleForm = memo(function AddVehicleForm({
     handleSubmit,
     reset,
     setValue,
-    watch,
-    formState: { errors },
   } = useForm<AddVehicleSchema>({
     resolver: zodResolver(addVehicleSchema),
     defaultValues: {
@@ -183,7 +189,7 @@ const AddVehicleForm = memo(function AddVehicleForm({
     },
   });
 
-  const watchedArrivedDate = watch("arrivedDate");
+  const watchedArrivedDate = useWatch({ control, name: "arrivedDate" });
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -212,16 +218,21 @@ const AddVehicleForm = memo(function AddVehicleForm({
   );
 
   const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          setImagePreview(result);
-          setValue("image", result, { shouldValidate: true });
-        };
-        reader.readAsDataURL(file);
+      if (!file) return;
+
+      setUploadingImage(true);
+      setUploadError("");
+      try {
+        const imageUrl = await uploadImage(file);
+        setImagePreview(imageUrl);
+        setValue("image", imageUrl, { shouldValidate: true });
+      } catch (error: unknown) {
+        setUploadError(error instanceof Error ? error.message : "Image upload failed");
+      } finally {
+        setUploadingImage(false);
+        e.target.value = "";
       }
     },
     [setValue]
@@ -236,15 +247,17 @@ const AddVehicleForm = memo(function AddVehicleForm({
     if (isNaN(date.getTime())) {
       const parts = watchedArrivedDate.split(" ");
       if (parts.length === 3) {
-        const day = parseInt(parts[0]);
+        const [dayValue, monthValue, yearValue] = parts;
+        if (!dayValue || !monthValue || !yearValue) return "";
+        const day = parseInt(dayValue);
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const month = months.findIndex((m) =>
-          m.toLowerCase().startsWith(parts[1].toLowerCase())
+          m.toLowerCase().startsWith(monthValue.toLowerCase())
         );
-        if (month !== -1) date = new Date(parseInt(parts[2]), month, day);
+        if (month !== -1) date = new Date(parseInt(yearValue), month, day);
       }
     }
-    return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+    return isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
   }, [watchedArrivedDate]);
 
   const handleDateChange = useCallback(
@@ -270,6 +283,8 @@ const AddVehicleForm = memo(function AddVehicleForm({
         Register Donor Vehicle
       </h3>
 
+      {/* React Hook Form owns mutable refs internally; this callback runs only on submit. */}
+      {/* eslint-disable-next-line react-hooks/refs */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left">
 
         {/* ── Make / Model ── */}
@@ -441,11 +456,19 @@ const AddVehicleForm = memo(function AddVehicleForm({
                     </span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       onChange={handleFileChange}
+                      disabled={uploadingImage}
                       className="w-full text-xs text-slate-400 font-mono file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:font-mono file:uppercase file:bg-red-600 file:text-white file:cursor-pointer hover:file:opacity-90 transition-all"
                     />
                   </div>
+
+                  {uploadingImage && (
+                    <span className="text-[9px] text-amber-400 font-mono">Uploading image...</span>
+                  )}
+                  {uploadError && (
+                    <span className="text-[9px] text-rose-400 font-mono">{uploadError}</span>
+                  )}
 
                   <div className="text-[9px] text-slate-600 font-mono text-center font-bold">
                     — OR —
@@ -469,12 +492,17 @@ const AddVehicleForm = memo(function AddVehicleForm({
 
                   {(imagePreview || field.value) && (
                     <div className="mt-1 flex items-center gap-2">
-                      <img
-                        src={imagePreview || field.value}
-                        alt="Preview"
-                        referrerPolicy="no-referrer"
-                        className="h-8 w-10 object-cover rounded border border-white/10"
-                      />
+                      <div className="relative h-8 w-10 overflow-hidden rounded border border-white/10">
+                        <Image
+                          src={imagePreview || field.value || INITIAL_VEHICLE_FORM.image}
+                          alt="Preview"
+                          referrerPolicy="no-referrer"
+                          fill
+                          sizes="40px"
+                          unoptimized
+                          className="object-cover"
+                        />
+                      </div>
                       <span className="text-[8px] text-emerald-400 font-mono">Image loaded</span>
                     </div>
                   )}

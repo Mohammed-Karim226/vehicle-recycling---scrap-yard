@@ -4,13 +4,18 @@ const envSchema = z
   .object({
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     DIRECT_URL: z.string().min(1).optional(),
-    ADMIN_PIN_HASH: z
-      .string()
-      .length(64)
-      .default("03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"),
-    ADMIN_SESSION_SECRET: z.string().min(16),
+    ADMIN_SESSION_SECRET: z.string().min(32),
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
+    // DVLA VES API
+    DVLA_API_KEY: z.string().min(1).optional(),
+    DVLA_API_URL: z.string().url().optional(),
+    // DVSA MOT History API
+    MOT_API_KEY: z.string().min(1).optional(),
+    DVSA_CLIENT_ID: z.string().min(1).optional(),
+    DVSA_CLIENT_SECRET: z.string().min(1).optional(),
+    DVSA_SCOPE_URL: z.string().url().optional(),
+    DVSA_TOKEN_URL: z.string().url().optional(),
   })
   .superRefine((data, ctx) => {
     const hasUrl = Boolean(data.NEXT_PUBLIC_SUPABASE_URL);
@@ -28,6 +33,7 @@ const envSchema = z
 export type Env = z.infer<typeof envSchema>;
 
 let cachedEnv: Env | null = null;
+const DEVELOPMENT_SESSION_SECRET = "dev-admin-session-secret-change-before-production";
 
 export function getEnv(): Env {
   if (cachedEnv) return cachedEnv;
@@ -35,12 +41,18 @@ export function getEnv(): Env {
   const parsed = envSchema.safeParse({
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_URL: process.env.DIRECT_URL,
-    ADMIN_PIN_HASH: process.env.ADMIN_PIN_HASH,
     ADMIN_SESSION_SECRET:
       process.env.ADMIN_SESSION_SECRET ??
-      (process.env.NODE_ENV === "production" ? undefined : "dev-admin-session-secret"),
+      (process.env.NODE_ENV === "production" ? undefined : DEVELOPMENT_SESSION_SECRET),
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    DVLA_API_KEY: process.env.DVLA_API_KEY,
+    DVLA_API_URL: process.env.DVLA_API_URL,
+    MOT_API_KEY: process.env.MOT_API_KEY,
+    DVSA_CLIENT_ID: process.env.DVSA_CLIENT_ID,
+    DVSA_CLIENT_SECRET: process.env.DVSA_CLIENT_SECRET,
+    DVSA_SCOPE_URL: process.env.DVSA_SCOPE_URL,
+    DVSA_TOKEN_URL: process.env.DVSA_TOKEN_URL,
   });
 
   if (!parsed.success) {

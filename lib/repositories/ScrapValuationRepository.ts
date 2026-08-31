@@ -18,29 +18,23 @@ export class ScrapValuationRepository {
     })
   }
 
+  async findByTrackingTokens(tokens: string[]): Promise<ScrapValuation[]> {
+    if (tokens.length === 0) return []
+    return prisma.scrapValuation.findMany({
+      where: { trackingToken: { in: tokens } },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 50,
+    })
+  }
+
   async countAll(): Promise<number> {
     return prisma.scrapValuation.count()
   }
 
   async findAll(): Promise<ScrapValuation[]> {
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
-    try {
-      await prisma.scrapValuation.deleteMany({
-        where: {
-          status: 'Rejected',
-          updatedAt: {
-            lt: threeDaysAgo
-          }
-        }
-      });
-    } catch (err) {
-      console.error("Error doing auto-cleanup of scrap valuations:", err);
-    }
-
     return prisma.scrapValuation.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 100,
     });
   }
 

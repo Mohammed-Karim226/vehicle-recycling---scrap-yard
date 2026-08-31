@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { RefreshCw, AlertCircle, Clock, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import {
   getRequestsByIds,
@@ -11,7 +13,8 @@ import {
   lookupPartRequestById,
   lookupScrapValuationById,
 } from "@/lib/actions";
-import type { PartRequest as PrismaPartRequest, ScrapValuation as PrismaScrapValuation } from "@prisma/client";
+import type { PublicPartRequest } from "@/lib/actions/partRequestActions";
+import type { PublicScrapValuation } from "@/lib/actions/scrapValuationActions";
 
 interface PartQuoteRequest {
   requestId: string;
@@ -65,18 +68,18 @@ function addStoredId(key: string, id: string): string[] {
 }
 
 // Helper to convert Prisma types to our component types
-function convertPartRequest(prismaPart: PrismaPartRequest): PartQuoteRequest {
+function convertPartRequest(prismaPart: PublicPartRequest): PartQuoteRequest {
   return {
-    requestId: prismaPart.id,
+    requestId: prismaPart.trackingToken,
     vehicleName: prismaPart.vehicleName,
     partsNeeded: prismaPart.partsNeeded,
     status: prismaPart.status.replace("_", " "),
     notes: prismaPart.notes ?? undefined,
-    timestamp: prismaPart.createdAt.toISOString()
+    timestamp: prismaPart.createdAt
   };
 }
 
-function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValuation {
+function convertScrapValuation(prismaValuation: PublicScrapValuation): ScrapValuation {
   let mappedStatus = "Pending Collection";
   if (prismaValuation.status === "Completed") {
     mappedStatus = "Collected";
@@ -87,13 +90,13 @@ function convertScrapValuation(prismaValuation: PrismaScrapValuation): ScrapValu
   }
 
   return {
-    id: prismaValuation.id,
+    id: prismaValuation.trackingToken,
     vehicleName: prismaValuation.vehicleName,
     registration: prismaValuation.registration,
     estimatedValue: prismaValuation.estimatedValue,
     status: mappedStatus,
     notes: prismaValuation.notes ?? undefined,
-    timestamp: prismaValuation.createdAt.toISOString()
+    timestamp: prismaValuation.createdAt
   };
 }
 
@@ -224,7 +227,7 @@ export default function MyRequestsView() {
               <label htmlFor="reference-lookup-input" className="sr-only">
                 Reference Code
               </label>
-              <input
+              <Input
                 id="reference-lookup-input"
                 type="text"
                 value={lookupId}
@@ -233,14 +236,14 @@ export default function MyRequestsView() {
                 disabled={lookupLoading}
                 className="bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500 flex-1 min-w-[180px] disabled:opacity-60"
               />
-              <button
+              <Button
                 type="submit"
                 disabled={lookupLoading || !lookupId.trim()}
                 className="bg-red-600 hover:bg-red-500 text-white font-mono text-xs uppercase font-bold py-2 px-4 rounded-xl transition-all cursor-pointer flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Search className={`h-3.5 w-3.5 ${lookupLoading ? "animate-spin" : ""}`} />
                 <span>{lookupLoading ? "Searching..." : "Link Ref"}</span>
-              </button>
+              </Button>
             </form>
             <AnimatePresence>
               {lookupMessage && (
@@ -260,7 +263,7 @@ export default function MyRequestsView() {
             </AnimatePresence>
           </div>
 
-          <button
+          <Button
             onClick={fetchSubmissions}
             disabled={loading}
             aria-busy={loading}
@@ -268,7 +271,7 @@ export default function MyRequestsView() {
           >
             <RefreshCw className={`h-3.5 w-3.5 text-red-400 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh Status</span>
-          </button>
+          </Button>
         </div>
       </motion.div>
 
@@ -281,12 +284,12 @@ export default function MyRequestsView() {
         <div className="p-16 border border-rose-900/30 bg-rose-950/10 backdrop-blur-md rounded-2xl text-center space-y-3.5">
           <AlertCircle className="h-6 w-6 text-rose-400 mx-auto" />
           <p className="text-rose-400 font-mono text-xs">{fetchError}</p>
-          <button
+          <Button
             onClick={fetchSubmissions}
             className="text-[10px] font-mono uppercase font-bold text-white bg-slate-900 hover:bg-slate-800 px-4 py-2 rounded-xl border border-white/5 transition-all cursor-pointer"
           >
             Try Again
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">

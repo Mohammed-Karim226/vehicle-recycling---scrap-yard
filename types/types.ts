@@ -22,6 +22,30 @@ export interface ScrapMetalPrice {
   updatedAt?: string;
 }
 
+export interface CatalyticConverterPrice {
+  id: string;
+  category: string;
+  make?: string;
+  model?: string;
+  yearFrom?: number;
+  yearTo?: number;
+  price: number;
+  trend: 'Rising' | 'Stable' | 'Falling';
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Result returned by a catalytic converter lookup (by vehicle or category) */
+export interface CatalyticConverterLookupResult {
+  found: boolean;
+  price?: number;
+  category?: string;
+  make?: string;
+  model?: string;
+  matchedBy: 'vehicle' | 'category' | 'none';
+}
+
 export interface ScrapQuoteRequest {
   registration: string;
   postcode: string;
@@ -41,6 +65,11 @@ export interface ScrapValuationResult {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
+  motStatus?: string;
+  motExpiryDate?: string;
+  mileage?: string;
+  colour?: string;
+  defects?: string[];
 }
 
 export interface PartQuoteSubmitted {
@@ -58,4 +87,4 @@ export interface PartQuoteSubmitted {
 }
 
 /** Admin dashboard sub-tab identifiers */
-export type AdminSubTab = 'overview' | 'scrap' | 'parts' | 'yard';
+export type AdminSubTab = 'overview' | 'scrap' | 'parts' | 'yard' | 'prices';

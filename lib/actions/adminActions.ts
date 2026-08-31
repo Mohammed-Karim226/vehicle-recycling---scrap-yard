@@ -7,9 +7,10 @@ import {
 } from '@/lib/auth/adminSession'
 
 export async function adminLogin(
-  pin: string
+  email: string,
+  password: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
-  return login(pin)
+  return login(email, password)
 }
 
 export async function adminLogout(): Promise<void> {
