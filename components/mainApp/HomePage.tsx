@@ -79,12 +79,12 @@ const HomePage = () => {
                     <span>Peterborough&apos;s Premium Vehicle Breaker</span>
                   </span>
 
-                  <h1 className="text-4xl sm:text-5xl lg:text-6.5xl font-black tracking-tight text-white uppercase leading-[1.05] font-sans">
-                    PETERBOROUGH&apos;S PREMIER <br />
+                  <h1 className="text-4xl sm:text-5xl lg:text-6.5xl font-normal tracking-normal text-white leading-[1.05] font-display">
+                    Peterborough&apos;s Premier <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-amber-500">
-                      VEHICLE BREAKERS
+                      Vehicle Breakers
                     </span>{" "}
-                    YARD
+                    Yard
                   </h1>
 
                   <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed font-sans">

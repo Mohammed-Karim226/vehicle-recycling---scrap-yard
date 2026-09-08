@@ -41,7 +41,7 @@ export default function Header({ currentTab, setCurrentTab, requestCount }: Head
           </div>
           
           <div>
-            <h1 className="text-md sm:text-lg font-black tracking-tight text-white group-hover:text-red-400 transition-colors uppercase flex items-center">
+            <h1 className="text-xl sm:text-2xl font-normal tracking-normal text-white group-hover:text-red-400 transition-colors flex items-center font-display">
               AUTOS
               <span className="text-[10px] text-slate-400 font-mono tracking-widest bg-white/5 border border-white/10 px-2 py-0.5 rounded-full ml-1.5 hidden sm:inline-block">PETERBOROUGH</span>
             </h1>
