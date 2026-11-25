@@ -149,6 +149,11 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
         
         if (!isMountedRef.current) return;
 
+        if ('error' in data) {
+          dispatch({ type: "SUBMIT_QUOTE_ERROR", message: data.error });
+          return;
+        }
+
         appendIdToStorage("rrs_my_scrap_ids", data.trackingToken);
         confirmForm.reset({ contactInfo: "" });
         dispatch({ type: "SUBMIT_QUOTE_SUCCESS", valuation: data });
@@ -392,28 +397,40 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
 
                 {valuation.motStatus && (
                   <div className="mt-3 flex justify-center">
-                    {valuation.motStatus === 'Active' ? (
+                    {valuation.motStatus === 'Valid' || valuation.motStatus === 'Active' ? (
                       <span className="px-3 py-1.5 bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 rounded-xl font-mono text-[9px] uppercase font-bold tracking-wider flex items-center gap-1.5">
                         <span className="h-2 w-2 bg-emerald-400 rounded-full animate-pulse shrink-0" />
-                        MOT: Active (Expires {valuation.motExpiryDate || 'N/A'})
+                        MOT: {valuation.motStatus}{valuation.motExpiryDate ? ` (Expires ${valuation.motExpiryDate})` : ''}
                       </span>
-                    ) : valuation.motStatus === 'Expired' ? (
+                    ) : valuation.motStatus === 'Not valid' || valuation.motStatus === 'Expired' ? (
                       <span className="px-3 py-1.5 bg-amber-950/80 border border-amber-500/30 text-amber-400 rounded-xl font-mono text-[9px] uppercase font-bold tracking-wider flex items-center gap-1.5">
                         <span className="h-2 w-2 bg-amber-500 rounded-full shrink-0" />
-                        MOT: Expired ({valuation.motExpiryDate || 'N/A'})
+                        MOT: {valuation.motStatus}{valuation.motExpiryDate ? ` (Expiry ${valuation.motExpiryDate})` : ''}
                       </span>
                     ) : valuation.motStatus === 'Failed' ? (
                       <span className="px-3 py-1.5 bg-rose-950/80 border border-rose-500/30 text-rose-400 rounded-xl font-mono text-[9px] uppercase font-bold tracking-wider flex items-center gap-1.5">
                         <span className="h-2 w-2 bg-rose-500 rounded-full shrink-0" />
-                        MOT: Failed ({valuation.motExpiryDate || 'N/A'})
+                        MOT: Failed{valuation.motExpiryDate ? ` (Expiry ${valuation.motExpiryDate})` : ''}
                       </span>
                     ) : (
                       <span className="px-3 py-1.5 bg-slate-900 border border-white/5 text-slate-400 rounded-xl font-mono text-[9px] uppercase font-bold tracking-wider">
-                        MOT: No History
+                        MOT: {valuation.motStatus}{valuation.motExpiryDate ? ` (Expiry ${valuation.motExpiryDate})` : ''}
                       </span>
                     )}
                   </div>
                 )}
+
+                <p className="text-[10px] leading-relaxed text-slate-400">
+                  Contains public sector information licensed under the{' '}
+                  <a
+                    href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-slate-200"
+                  >
+                    Open Government Licence v3.0
+                  </a>.
+                </p>
               </div>
 
               <div className="bg-slate-900/40 border border-white/5 p-6 rounded-xl flex flex-col items-center justify-center relative overflow-hidden text-center shadow-inner">

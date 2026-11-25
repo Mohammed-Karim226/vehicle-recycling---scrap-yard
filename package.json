@@ -11,6 +11,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:dvla": "node --test tests/dvla.test.mjs tests/scrap-valuation.test.mjs",
+    "dvla:check": "node scripts/check-dvla.mjs",
     "maintenance": "tsx prisma/maintenance.ts",
     "admin:create": "node scripts/create-admin.mjs",
     "postinstall": "prisma generate"
