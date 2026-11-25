@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const scrapQuoteHourlyLimitSchema = z.coerce.number().int().min(1).max(10_000).default(60);
+
 const envSchema = z
   .object({
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
@@ -8,8 +10,12 @@ const envSchema = z
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
     // DVLA VES API
-    DVLA_API_KEY: z.string().min(1).optional(),
-    DVLA_API_URL: z.string().url().optional(),
+    DVLA_API_KEY: z.string().trim().min(1).optional(),
+    DVLA_API_URL: z.enum([
+      'https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles',
+      'https://uat.driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles',
+    ]).optional(),
+    SCRAP_QUOTE_HOURLY_LIMIT: scrapQuoteHourlyLimitSchema,
     // DVSA MOT History API
     MOT_API_KEY: z.string().min(1).optional(),
     DVSA_CLIENT_ID: z.string().min(1).optional(),
@@ -35,6 +41,15 @@ export type Env = z.infer<typeof envSchema>;
 let cachedEnv: Env | null = null;
 const DEVELOPMENT_SESSION_SECRET = "dev-admin-session-secret-change-before-production";
 
+// Public quotes only need their own limit, independent of admin or storage setup.
+export function getScrapQuoteHourlyLimit(): number {
+  const parsed = scrapQuoteHourlyLimitSchema.safeParse(process.env.SCRAP_QUOTE_HOURLY_LIMIT);
+  if (!parsed.success) {
+    throw new Error("Invalid environment configuration: SCRAP_QUOTE_HOURLY_LIMIT must be a whole number from 1 to 10000");
+  }
+  return parsed.data;
+}
+
 export function getEnv(): Env {
   if (cachedEnv) return cachedEnv;
 
@@ -48,6 +63,7 @@ export function getEnv(): Env {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     DVLA_API_KEY: process.env.DVLA_API_KEY,
     DVLA_API_URL: process.env.DVLA_API_URL,
+    SCRAP_QUOTE_HOURLY_LIMIT: process.env.SCRAP_QUOTE_HOURLY_LIMIT,
     MOT_API_KEY: process.env.MOT_API_KEY,
     DVSA_CLIENT_ID: process.env.DVSA_CLIENT_ID,
     DVSA_CLIENT_SECRET: process.env.DVSA_CLIENT_SECRET,

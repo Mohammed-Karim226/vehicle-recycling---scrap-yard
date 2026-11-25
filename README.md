@@ -29,6 +29,49 @@ Run `runRetentionMaintenance()` from `lib/maintenance/retention.ts` through your
 deployment scheduler once per day. The function is intentionally not exposed as
 a public route or Server Action.
 
+## DVLA vehicle lookup
+
+Set the private `DVLA_API_KEY` to your production VES key and `DVLA_API_URL` to
+`https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles` (the default).
+Restart the development server after changing `.env`. For a hosted deployment,
+set these same server environment variables and restart or redeploy it.
+
+Verify authentication without requesting any vehicle data:
+
+```bash
+npm run dvla:check
+```
+
+This sends an empty-registration request and expects HTTP 400 from DVLA's input
+validation. To also verify a successful lookup, supply a registration you are
+authorised to look up:
+
+```bash
+npm run dvla:check -- --registration=YOUR_REGISTRATION
+```
+
+UAT requires separately enabled test access and the UAT endpoint
+`https://uat.driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles`.
+Its documented sample registration is `AA19AAA`. DVLA's default account limit is
+two requests per second; the quote form asks customers to retry when DVLA returns
+HTTP 429 after one bounded retry. The retry respects `Retry-After` when present;
+waits longer than two seconds return the busy message instead. Both attempts share
+an eight-second deadline. This handles brief throttling but does not increase
+DVLA's account quota or enforce a global request queue across server instances.
+For sustained traffic above your account quota, request a higher limit from DVLA.
+
+The website separately allows 60 quote attempts per IP address per hour by default.
+Set `SCRAP_QUOTE_HOURLY_LIMIT=60` in `.env` or your hosting environment to change
+this cap (whole numbers from 1 to 10000), then restart or redeploy. Failed vehicle
+lookups also count toward this hourly limit; the same IP's existing counter is
+kept when the configured cap changes. The hourly window starts with the first
+attempt and resets after one hour. This setting does not change DVLA's quota.
+
+Failed lookups do not create valuations. VES provides MOT status and
+expiry; it does not provide mileage, advisories or a vehicle's actual kerb weight.
+
+Run the offline integration regression checks with `npm run test:dvla`.
+
 ## Getting Started
 
 First, run the development server:
