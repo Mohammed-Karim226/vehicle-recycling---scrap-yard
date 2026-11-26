@@ -51,6 +51,22 @@ export interface ScrapQuoteRequest {
   postcode: string;
 }
 
+export interface ScrapVehicleDetails {
+  engineCapacityCc?: number;
+  yearOfManufacture?: number;
+  firstRegistered?: string;
+  wheelPlan?: string;
+  typeApproval?: string;
+  co2Emissions?: number;
+  euroStatus?: string;
+  revenueWeightKg?: number;
+  taxStatus?: string;
+  taxDueDate?: string;
+  dateOfLastV5CIssued?: string;
+  markedAsScrapped?: boolean;
+  markedForExport?: boolean;
+}
+
 export interface ScrapValuationResult {
   id?: string;
   registration: string;
@@ -70,6 +86,7 @@ export interface ScrapValuationResult {
   mileage?: string;
   colour?: string;
   defects?: string[];
+  vehicleDetails?: ScrapVehicleDetails;
 }
 
 export interface PartQuoteSubmitted {

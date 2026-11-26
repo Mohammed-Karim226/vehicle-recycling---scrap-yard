@@ -10,10 +10,10 @@ interface FooterProps {
 export default function Footer({ setCurrentTab }: FooterProps) {
   return (
     <footer
-      className="bg-slate-950/45 backdrop-blur-3xl text-slate-400 border-t border-white/5 pt-16 pb-8 relative z-20"
+      className="relative z-20 w-full min-w-0 border-t border-white/5 bg-slate-950/45 pb-8 pt-10 text-slate-400 backdrop-blur-3xl sm:pt-16"
       id="footer-section"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-10">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 sm:grid-cols-2 sm:gap-10 sm:px-6 lg:grid-cols-4 lg:px-8 [&>div]:min-w-0">
         <div className="space-y-4 text-left">
           <div className="flex items-center space-x-3">
             <div className="bg-gradient-to-tr from-red-600 to-pink-600 text-white font-mono text-xs font-black px-2.5 py-1 rounded-lg tracking-wider border border-white/10">
@@ -29,7 +29,7 @@ export default function Footer({ setCurrentTab }: FooterProps) {
             quotes, rapid collections, and high-quality spare auto parts.
           </p>
           <div className="flex items-center space-x-2 text-[10px] text-slate-500 font-mono">
-            <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-500" />
             <span className="uppercase font-semibold tracking-wider">
               Environment Agency Approved ATF
             </span>
@@ -72,7 +72,7 @@ export default function Footer({ setCurrentTab }: FooterProps) {
             <li>
               <Button variant="link"
                 onClick={() => setCurrentTab("parts")}
-                className="hover:text-white hover:underline transition-colors text-left cursor-pointer"
+                className="h-auto min-h-11 max-w-full justify-start whitespace-normal px-0 py-2 text-left text-xs text-slate-400 transition-colors hover:text-white hover:underline"
               >
                 Search In-Yard Vehicles
               </Button>
@@ -80,7 +80,7 @@ export default function Footer({ setCurrentTab }: FooterProps) {
             <li>
               <Button variant="link"
                 onClick={() => setCurrentTab("prices")}
-                className="hover:text-white hover:underline transition-colors text-left cursor-pointer"
+                className="h-auto min-h-11 max-w-full justify-start whitespace-normal px-0 py-2 text-left text-xs text-slate-400 transition-colors hover:text-white hover:underline"
               >
                 Real-Time Scrap Rates
               </Button>
@@ -88,7 +88,7 @@ export default function Footer({ setCurrentTab }: FooterProps) {
             <li>
               <Button variant="link"
                 onClick={() => setCurrentTab("about")}
-                className="hover:text-white hover:underline transition-colors text-left cursor-pointer"
+                className="h-auto min-h-11 max-w-full justify-start whitespace-normal px-0 py-2 text-left text-xs text-slate-400 transition-colors hover:text-white hover:underline"
               >
                 How It Works & Salvage Yard
               </Button>
@@ -96,7 +96,7 @@ export default function Footer({ setCurrentTab }: FooterProps) {
             <li>
               <Button variant="link"
                 onClick={() => setCurrentTab("requests")}
-                className="hover:text-white hover:underline transition-colors text-left cursor-pointer font-bold text-red-400"
+                className="h-auto min-h-11 max-w-full justify-start whitespace-normal px-0 py-2 text-left text-xs font-bold text-red-400 transition-colors hover:text-white hover:underline"
               >
                 Track My Requests Live
               </Button>
@@ -118,17 +118,17 @@ export default function Footer({ setCurrentTab }: FooterProps) {
               </span>
             </li>
             <li className="flex items-center space-x-2.5">
-              <Phone className="h-4 w-4 text-red-500" />
-              <span>07557402755</span>
+              <Phone className="h-4 w-4 shrink-0 text-red-500" />
+              <a href="tel:07557402755" className="inline-flex min-h-11 items-center hover:text-white">07557402755</a>
             </li>
-            <li className="flex items-center space-x-2.5">
-              <Mail className="h-4 w-4 text-red-500" />
-              <span className="truncate max-w-full inline-block">
+            <li className="flex min-w-0 items-center gap-2.5">
+              <Mail className="h-4 w-4 shrink-0 text-red-500" />
+              <a href="mailto:testquotes@rrsautospeterborough.co.uk" className="min-w-0 break-all py-2 leading-relaxed hover:text-white">
                 testquotes@rrsautospeterborough.co.uk
-              </span>
+              </a>
             </li>
             <li className="flex items-center space-x-2.5">
-              <Clock className="h-4 w-4 text-slate-650" />
+              <Clock className="h-4 w-4 shrink-0 text-slate-650" />
               <span className="text-[10px] text-slate-550 lowercase tracking-wider">
                 testMon - Sat: 8am - 5:30pm
               </span>

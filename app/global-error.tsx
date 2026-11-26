@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { workSans } from "./fonts";
+import "./globals.css";
 
 export default function GlobalError({
   reset,
@@ -10,7 +12,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={workSans.variable}>
       <body className="min-h-screen flex items-center justify-center bg-slate-950 text-white font-sans antialiased px-4">
         <Card className="max-w-md w-full bg-slate-900/80 text-center">
           <CardContent className="space-y-5 p-8">

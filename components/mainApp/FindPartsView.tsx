@@ -269,7 +269,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-12"
+      className="min-w-0 space-y-8 break-words sm:space-y-12"
       id="find-parts-tab-view"
     >
       {/* Search Header Banner */}
@@ -277,7 +277,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
         variants={{ itemVariants }}
         className="relative p-[1px] bg-gradient-to-r from-red-500/10 via-pink-500/10 to-amber-500/10 rounded-2xl overflow-hidden shadow-2xl"
       >
-        <div className="bg-slate-950/70 backdrop-blur-3xl p-6 sm:p-8 rounded-[15px] relative z-10">
+        <div className="bg-slate-950/70 backdrop-blur-3xl p-4 sm:p-8 rounded-[15px] relative z-10">
           <div className="max-w-3xl space-y-3">
             <span className="text-red-500 font-mono text-[9px] uppercase font-bold tracking-widest block">
               Over 200+ donor vehicles stock
@@ -293,8 +293,8 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
           </div>
 
           {/* Filter Toolbar */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/5 font-sans">
-            <div className="relative group/search">
+          <div className="grid min-w-0 grid-cols-1 gap-4 mt-6 pt-6 border-t border-white/5 font-sans sm:grid-cols-2 lg:mt-8 lg:grid-cols-3">
+            <div className="relative min-w-0 group/search sm:col-span-2 lg:col-span-1">
               <div className="absolute inset-0 bg-red-500 rounded-xl blur opacity-0 group-focus-within/search:opacity-10 transition-opacity"></div>
               <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-500 h-4.5 w-4.5 z-10" />
               <input
@@ -302,13 +302,13 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                 placeholder="Search make or model..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-900 text-white placeholder-slate-600 pl-11 pr-4 py-3 h-11 rounded-xl border border-white/5 text-xs font-semibold focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition-all uppercase relative z-0 font-mono"
+                className="w-full min-w-0 bg-slate-900 text-white placeholder-slate-600 pl-11 pr-4 py-3 h-11 rounded-xl border border-white/5 text-base font-semibold focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition-all uppercase relative z-0 font-mono"
               />
             </div>
 
             <div>
               <Select value={selectedMake} onValueChange={setSelectedMake}>
-                <SelectTrigger className="w-full bg-slate-900 border border-white/5 text-slate-300  rounded-2xl cursor-pointer">
+                <SelectTrigger className="h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-slate-300 rounded-xl cursor-pointer">
                   <SelectValue placeholder="All Car Makes" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-950/95 backdrop-blur-3xl border border-white/10 rounded-xl mt-12">
@@ -328,7 +328,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
               </Select>
             </div>
 
-            <div className="bg-slate-900/60 border border-white/5 rounded-xl h-11 px-4.5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <div className="min-w-0 bg-slate-900/60 border border-white/5 rounded-xl min-h-11 px-4 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
               <span className="font-bold">RESULT COUNT:</span>
               <span className="text-white font-black">
                 {filteredVehicles.length} vehicles
@@ -355,7 +355,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                 variants={{ itemVariants }}
                 whileHover={{ scale: 1.02, y: -4 }}
                 onClick={() => setActiveVehicle(vehicle)}
-                className="bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-[0_20px_40px_rgba(239,68,68,0.15)] hover:border-red-500/30 transition-all duration-300"
+                className="min-w-0 bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden cursor-pointer group hover:shadow-[0_20px_40px_rgba(239,68,68,0.15)] hover:border-red-500/30 transition-all duration-300"
                 id={`vehicle-card-${vehicle.id}`}
               >
                 <div className="relative h-48 bg-slate-900 overflow-hidden">
@@ -381,7 +381,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                   </div>
                 </div>
 
-                <div className="p-5 space-y-2 text-left">
+                <div className="p-4 space-y-2 text-left sm:p-5">
                   <div className="text-[10px] text-red-400 font-mono font-bold tracking-widest uppercase">
                     {vehicle.year} • {vehicle.color}
                   </div>
@@ -416,7 +416,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
         className="relative p-[1px] bg-gradient-to-r from-red-500/10 via-pink-500/10 to-amber-500/10 rounded-2xl overflow-hidden"
         id="part-request-specific-form"
       >
-        <div className="bg-slate-950/70 backdrop-blur-3xl p-6 sm:p-8 rounded-[15px] space-y-6">
+        <div className="bg-slate-950/70 backdrop-blur-3xl p-4 sm:p-8 rounded-[15px] space-y-6">
           <div className="max-w-2xl space-y-2 mb-6 text-left">
             <h3 className="text-xs font-bold text-white uppercase tracking-widest font-mono border-l-2 border-red-500 pl-3">
               Request A Specific Part (Off-Yard Lookups)
@@ -431,7 +431,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
 
           <form
             onSubmit={submitFallback}
-            className="grid grid-cols-1 md:grid-cols-2 gap-5 text-left"
+            className="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-5 text-left [&>div]:min-w-0"
           >
             {/* Make */}
             <div>
@@ -449,7 +449,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                         field.onChange(e.target.value.toUpperCase())
                       }
                       placeholder="e.g. FORD, VAUXHALL (min 1 char)"
-                      className="h-11 w-full bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-bold uppercase font-mono rounded-lg text-xs"
+                      className="h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-bold uppercase font-mono rounded-lg text-base"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -475,7 +475,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                         field.onChange(e.target.value.toUpperCase())
                       }
                       placeholder="e.g. FIESTA, ASTRA"
-                      className="h-11 w-full bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-bold uppercase font-mono rounded-lg text-xs"
+                      className="h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-bold uppercase font-mono rounded-lg text-base"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -498,7 +498,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                     <Input
                       {...field}
                       placeholder="e.g. 2008 / 57 Plate"
-                      className="h-11 w-full bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-semibold uppercase font-mono rounded-lg text-xs"
+                      className="h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-semibold uppercase font-mono rounded-lg text-base"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -559,7 +559,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                       {...field}
                       rows={3}
                       placeholder="e.g. Front bumper skin (Electric Orange), nearside headlight assembly, steering rack..."
-                      className="w-full bg-slate-900 border border-white/5 rounded-lg p-3.5 text-xs font-semibold placeholder-slate-600 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 text-white"
+                      className="w-full min-w-0 resize-y bg-slate-900 border border-white/5 rounded-lg p-3.5 text-base font-semibold placeholder-slate-600 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 text-white"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -582,7 +582,8 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                     <Input
                       {...field}
                       placeholder="e.g. John Doe"
-                      className="h-11 w-full bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-semibold rounded-lg text-xs"
+                      autoComplete="name"
+                      className="h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-semibold rounded-lg text-base"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -604,8 +605,10 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
                   <Field data-invalid={fieldState.invalid}>
                     <Input
                       {...field}
+                      type="tel"
+                      autoComplete="tel"
                       placeholder="Contact phone (for quotes)"
-                      className="h-11 w-full bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-bold font-mono rounded-lg text-xs"
+                      className="h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-bold font-mono rounded-lg text-base"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -619,7 +622,7 @@ export default function FindPartsView({ onQuoteAdded }: FindPartsViewProps) {
               <button
                 type="submit"
                 disabled={customSubmitting}
-                className="w-full sm:w-auto bg-gradient-to-r from-red-650 to-pink-650 hover:from-red-600 hover:to-pink-600 text-white py-3.5 px-8 rounded-xl font-bold uppercase text-xs tracking-wider transition-all disabled:bg-slate-800 disabled:text-slate-500 flex items-center justify-center space-x-2 cursor-pointer border border-white/10 shadow-lg shadow-red-500/10 active:scale-[0.98]"
+                className="min-h-11 w-full sm:w-auto bg-gradient-to-r from-red-650 to-pink-650 hover:from-red-600 hover:to-pink-600 text-white py-3.5 px-4 sm:px-8 rounded-xl font-bold uppercase text-xs tracking-wider transition-all disabled:bg-slate-800 disabled:text-slate-500 flex items-center justify-center gap-2 cursor-pointer border border-white/10 shadow-lg shadow-red-500/10 active:scale-[0.98]"
               >
                 {customSubmitting ? (
                   <>

@@ -5,8 +5,13 @@
 Use a pooled PostgreSQL URL for `DATABASE_URL` and a direct database URL for
 `DIRECT_URL`. Copy the variable names from `.env.example`; never commit `.env`.
 
-Use a random `ADMIN_SESSION_SECRET` of at least 32 characters. Create the first
-database admin after migrations:
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the server environment to configure a
+single admin login. Use a password of 8–128 characters and a separate random
+`ADMIN_SESSION_SECRET` of at least 32 characters. Restart the app after changing
+the credentials. In `.env`, write `\$` for a literal `$` in the password.
+
+For database-managed admin accounts, leave `ADMIN_EMAIL` and `ADMIN_PASSWORD`
+unset and create the first admin after migrations.
 
 ```bash
 npm run admin:create -- --email=admin@example.com --password="a-strong-password"

@@ -128,7 +128,7 @@ export default function ScrapPricesView() {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-12"
+      className="min-w-0 space-y-8 break-words sm:space-y-12"
       id="scrap-prices-tab-view"
     >
       {/* Intro Ticker Banner */}
@@ -136,9 +136,9 @@ export default function ScrapPricesView() {
         variants={itemVariants}
         className="relative p-[1px] bg-gradient-to-r from-red-500/10 via-pink-500/10 to-amber-500/10 rounded-2xl overflow-hidden shadow-2xl"
       >
-        <div className="bg-slate-950/70 backdrop-blur-3xl p-6 sm:p-8 rounded-[15px] relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2.5">
+        <div className="bg-slate-950/70 backdrop-blur-3xl p-4 sm:p-8 rounded-[15px] relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <span className={`font-mono text-[9px] font-bold px-2.5 py-1 rounded-full border flex items-center space-x-1.5 uppercase ${
                 fetchError
                   ? "bg-amber-950/85 text-amber-400 border-amber-900/40"
@@ -176,7 +176,7 @@ export default function ScrapPricesView() {
             onClick={triggerLiveUpdate}
             disabled={updating}
             aria-busy={updating}
-            className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-[10px] text-white uppercase tracking-widest font-mono font-bold px-4 py-3.5 rounded-xl border border-white/5 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex min-h-11 w-full shrink-0 items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-[10px] text-white uppercase tracking-widest font-mono font-bold px-4 py-3.5 rounded-xl border border-white/5 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
           >
             <RefreshCw className={`h-3.5 w-3.5 text-red-400 ${updating ? "animate-spin" : ""}`} />
             <span>{updating ? "Syncing index..." : "Refresh Index"}</span>
@@ -190,62 +190,58 @@ export default function ScrapPricesView() {
         {/* Price Table Card - Premium dynamic table */}
         <motion.div
           variants={itemVariants}
-          className="lg:col-span-2 bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl shadow-xl p-6 space-y-6"
+          className="min-w-0 lg:col-span-2 bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl shadow-xl p-4 space-y-6 sm:p-6"
         >
-          <h3 className="text-xs font-bold text-white uppercase tracking-widest font-mono border-l-2 border-red-500 pl-3">
+          <h3 id="non-ferrous-metals-index" className="text-xs font-bold text-white uppercase tracking-widest font-mono border-l-2 border-red-500 pl-3">
             Non-Ferrous Metals Index
           </h3>
 
-          <div className="app-scrollbar overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs sm:text-sm">
-              <thead>
-                <tr className="border-b border-white/5 text-slate-500 font-mono text-[10px] uppercase tracking-wider">
-                  <th className="py-3.5">Category</th>
-                  <th className="py-3.5 text-right">Estimated Price (per kg)</th>
-                  <th className="py-3.5 text-right">Trend</th>
+          <table aria-labelledby="non-ferrous-metals-index" className="w-full table-fixed border-collapse text-left text-xs sm:table-auto sm:text-sm">
+            <thead>
+              <tr className="border-b border-white/5 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                <th scope="col" className="w-[35%] wrap-anywhere py-3.5 pr-2 sm:w-auto sm:pr-4">Category</th>
+                <th scope="col" className="w-[38%] wrap-anywhere py-3.5 pl-1 text-right sm:w-auto sm:px-4">Estimated Price (per kg)</th>
+                <th scope="col" className="w-[27%] wrap-anywhere py-3.5 pl-1 text-right sm:w-auto sm:pl-0">Trend</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.02]">
+              {prices.map((item) => (
+                <tr key={item.id} className="group transition-all hover:bg-white/[0.01]">
+                  <td className="wrap-anywhere py-4 pr-2 font-bold uppercase tracking-wide text-white transition-colors group-hover:text-red-400 sm:pr-4">
+                    {item.category}
+                  </td>
+                  <td className="wrap-anywhere py-4 pl-1 text-right font-mono font-black text-slate-200 sm:px-4">
+                    £{item.pricePerKgMin.toFixed(2)} - £{item.pricePerKgMax.toFixed(2)}
+                  </td>
+                  <td className="py-4 pl-1 text-right sm:pl-0">
+                    {item.trend === "Rising" && (
+                      <span className="inline-flex max-w-full items-center gap-0.5 rounded-md border border-emerald-900/30 bg-emerald-950/50 px-1.5 py-1 align-middle font-mono text-[9px] font-bold text-emerald-400 sm:gap-1 sm:px-2.5">
+                        <TrendingUp aria-hidden="true" className="size-3 shrink-0 sm:size-3.5" />
+                        <span className="wrap-anywhere">RISING</span>
+                      </span>
+                    )}
+                    {item.trend === "Falling" && (
+                      <span className="inline-flex max-w-full items-center gap-0.5 rounded-md border border-rose-900/30 bg-rose-950/50 px-1.5 py-1 align-middle font-mono text-[9px] font-bold text-rose-400 sm:gap-1 sm:px-2.5">
+                        <TrendingDown aria-hidden="true" className="size-3 shrink-0 sm:size-3.5" />
+                        <span className="wrap-anywhere">FALLING</span>
+                      </span>
+                    )}
+                    {item.trend === "Stable" && (
+                      <span className="inline-flex max-w-full items-center rounded-md border border-white/5 bg-slate-900/50 px-1.5 py-1 align-middle font-mono text-[9px] font-bold text-slate-400 sm:px-2.5">
+                        <span className="wrap-anywhere">STABLE</span>
+                      </span>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.02]">
-                {prices.map((item) => (
-                  <tr key={item.id} className="hover:bg-white/[0.01] transition-all group">
-                    <td className="py-4 font-bold text-white text-xs sm:text-sm uppercase tracking-wide group-hover:text-red-400 transition-colors">
-                      {item.category}
-                    </td>
-                    <td className="py-4 text-right font-mono font-black text-slate-200 text-xs sm:text-sm">
-                      £{item.pricePerKgMin.toFixed(2)} - £{item.pricePerKgMax.toFixed(2)}
-                    </td>
-                    <td className="py-4 text-right">
-                      <div className="inline-flex items-center justify-end space-x-1.5">
-                        {item.trend === "Rising" && (
-                          <span className="bg-emerald-950/50 text-emerald-400 px-2.5 py-1 rounded-md text-[9px] font-mono font-bold flex items-center space-x-1 border border-emerald-900/30">
-                            <TrendingUp className="h-3.5 w-3.5" />
-                            <span>RISING</span>
-                          </span>
-                        )}
-                        {item.trend === "Falling" && (
-                          <span className="bg-rose-950/50 text-rose-400 px-2.5 py-1 rounded-md text-[9px] font-mono font-bold flex items-center space-x-1 border border-rose-900/30">
-                            <TrendingDown className="h-3.5 w-3.5" />
-                            <span>FALLING</span>
-                          </span>
-                        )}
-                        {item.trend === "Stable" && (
-                          <span className="bg-slate-900/50 text-slate-400 px-2.5 py-1 rounded-md text-[9px] font-mono font-bold flex items-center space-x-1 border border-white/5">
-                            <span>STABLE</span>
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </motion.div>
 
         {/* Catalytic Converter Valuation Card */}
         <motion.div
           variants={itemVariants}
-          className="bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden shadow-xl"
+          className="min-w-0 bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden shadow-xl sm:p-6"
         >
           {/* Subtle gradient light sweep */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/5 to-transparent pointer-events-none"></div>
@@ -281,7 +277,7 @@ export default function ScrapPricesView() {
                   placeholder="e.g. GM102, 1278393, Ford-B5"
                   value={serialNumber}
                   onChange={(e) => setSerialNumber(e.target.value)}
-                  className="w-full bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-mono p-3 rounded-lg text-xs uppercase"
+                  className="min-h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-mono p-3 rounded-lg text-base uppercase"
                 />
               </div>
 

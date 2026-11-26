@@ -7,6 +7,40 @@ const schemas = loadTypeScriptModule('lib/validation/schemas.ts');
 const { DVLAError, estimateWeightKg } = loadTypeScriptModule('lib/dvla.ts');
 const privateProviderDetail = 'PROVIDER_KEY_SENTINEL_NEVER_EXPOSE';
 
+test('quote inputs display UK spacing and submit compact uppercase values', () => {
+  assert.equal(schemas.formatQuoteRegistration('ab12'), 'AB12 ');
+  assert.equal(schemas.formatQuoteRegistration('ab12c'), 'AB12 C');
+  assert.equal(schemas.formatQuoteRegistration(' ab12-cde '), 'AB12 CDE');
+  assert.equal(schemas.formatQuoteRegistration('ab12 3'), 'AB123');
+  assert.equal(schemas.formatQuoteRegistration('a123 abc'), 'A123 ABC');
+  assert.equal(schemas.formatQuotePostcode('pe15'), 'PE15');
+  assert.equal(schemas.formatQuotePostcode('pe1 5'), 'PE1 5');
+
+  for (const postcode of ['M1 1AE', 'B33 8TH', 'W1A 0AX', 'PE1 5YP', 'DN55 1PT', 'EC1A 1BB', 'GIR 0AA']) {
+    const compact = postcode.replace(' ', '');
+    const displayedPostcode = schemas.formatQuotePostcode(compact.toLowerCase());
+    assert.equal(displayedPostcode, postcode);
+    assert.deepEqual(schemas.quoteInputSchema.parse({ registration: 'AB12 CDE', postcode: displayedPostcode }), {
+      registration: 'AB12CDE',
+      postcode: compact,
+    });
+  }
+});
+
+test('only complete modern registrations qualify for the green border', () => {
+  assert.equal(schemas.isCompleteModernRegistration('AB12 CDE'), true);
+
+  for (const registration of ['AB12 C', 'AB12 CD', 'AB12 CDEF', 'AB12 CD1']) {
+    assert.equal(schemas.isCompleteModernRegistration(registration), false);
+    assert.equal(schemas.quoteInputSchema.safeParse({ registration, postcode: 'PE1 5YP' }).success, false);
+  }
+
+  for (const registration of ['AB12', 'AB123', 'A123 ABC']) {
+    assert.equal(schemas.isCompleteModernRegistration(registration), false);
+    assert.equal(schemas.quoteInputSchema.safeParse({ registration, postcode: 'PE1 5YP' }).success, true);
+  }
+});
+
 test('the hourly cap defaults to 60 and accepts only configured whole numbers from 1 to 10000', () => {
   const previousEnv = process.env;
   try {
@@ -160,6 +194,11 @@ test('invalid input and local rate limits stop before vehicle lookup or quote wr
   assert.deepEqual(invalidInput.calls.lookups, []);
   assert.deepEqual(invalidInput.calls.valuations, []);
 
+  const invalidPostcode = await invalidInput.generateScrapValuation('AB12 CDE', 'PE1 5Y');
+  assert.match(invalidPostcode.error, /invalid registration or postcode/i);
+  assert.deepEqual(invalidInput.calls.lookups, []);
+  assert.deepEqual(invalidInput.calls.valuations, []);
+
   const rateLimited = createQuoteFixture({ rateLimitError: new errors.RateLimitError() });
   const rateLimitResult = await rateLimited.generateScrapValuation('AB12CDE', 'CB1 1AA');
   assert.match(rateLimitResult.error, /wait and try again/i);
@@ -205,6 +244,18 @@ test('a successful lookup persists vehicle details and returns the existing trac
       colour: 'BLUE',
       motStatus: 'Valid',
       motExpiryDate: '2027-03-15',
+      yearOfFirstRegistration: 2008,
+      monthOfFirstRegistration: 4,
+      wheelplan: '2 AXLE RIGID BODY',
+      typeApproval: 'M1',
+      co2Emissions: 159,
+      euroStatus: 'EURO 4',
+      revenueWeight: 1820,
+      taxStatus: 'Taxed',
+      taxDueDate: '2027-04-01',
+      dateOfLastV5CIssued: '2024-07-15',
+      markedAsScrapped: false,
+      markedForExport: true,
     },
   });
 
@@ -221,6 +272,21 @@ test('a successful lookup persists vehicle details and returns the existing trac
   assert.equal(result.colour, 'BLUE');
   assert.equal(result.motStatus, 'Valid');
   assert.equal(result.motExpiryDate, '2027-03-15');
+  assert.deepEqual(result.vehicleDetails, {
+    engineCapacityCc: 1596,
+    yearOfManufacture: 2008,
+    firstRegistered: '2008-04',
+    wheelPlan: '2 AXLE RIGID BODY',
+    typeApproval: 'M1',
+    co2Emissions: 159,
+    euroStatus: 'EURO 4',
+    revenueWeightKg: 1820,
+    taxStatus: 'Taxed',
+    taxDueDate: '2027-04-01',
+    dateOfLastV5CIssued: '2024-07-15',
+    markedAsScrapped: false,
+    markedForExport: true,
+  });
   assert.ok(Number.isFinite(result.estimatedValue) && result.estimatedValue >= 50);
   assert.ok(Number.isFinite(result.weightKg) && result.weightKg > 0);
   assert.equal(calls.valuations.length, 1);
@@ -244,8 +310,27 @@ test('missing optional vehicle data does not invent a current year or petrol fue
   assert.equal(result.engineSize, 'Unknown');
   assert.equal(result.motStatus, 'No details held');
   assert.equal(result.motExpiryDate, '');
+  assert.ok(Object.values(result.vehicleDetails).every((value) => value === undefined));
   assert.equal(calls.valuations[0].vehicleName, 'FORD');
   assert.equal(calls.valuations[0].fuelType, 'Unknown');
+});
+
+test('older DVLA registration dates and zero emissions reach the valuation result', async () => {
+  const { generateScrapValuation } = createQuoteFixture({
+    vehicle: {
+      registrationNumber: 'AB12CDE',
+      make: 'NISSAN',
+      fuelType: 'ELECTRICITY',
+      monthOfFirstRegistration: '2012-09',
+      co2Emissions: 0,
+    },
+  });
+
+  const result = await generateScrapValuation('AB12CDE', 'CB1 1AA');
+
+  assert.equal(result.vehicleDetails.firstRegistered, '2012-09');
+  assert.equal(result.vehicleDetails.co2Emissions, 0);
+  assert.equal(result.vehicleDetails.engineCapacityCc, undefined);
 });
 
 test('an unexpected persistence failure returns a generic error without internal details', async () => {

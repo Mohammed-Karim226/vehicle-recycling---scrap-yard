@@ -201,7 +201,7 @@ export default function MyRequestsView() {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-8"
+      className="min-w-0 space-y-8 break-words"
       id="my-requests-tab-view"
     >
 
@@ -210,8 +210,8 @@ export default function MyRequestsView() {
         variants={{ itemVariants }}
         className="relative p-[1px] bg-gradient-to-r from-red-500/10 via-pink-500/10 to-amber-500/10 rounded-2xl overflow-hidden shadow-2xl"
       >
-        <div className="bg-slate-950/70 backdrop-blur-3xl p-6 sm:p-8 rounded-[15px] relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="space-y-1.5 flex-1">
+        <div className="bg-slate-950/70 backdrop-blur-3xl p-4 sm:p-8 rounded-[15px] relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="min-w-0 w-full space-y-1.5 flex-1">
             <span className="text-red-500 font-mono text-[9px] uppercase font-bold tracking-widest block">
               Live submission portal
             </span>
@@ -223,7 +223,7 @@ export default function MyRequestsView() {
             </p>
 
             {/* Quick reference ID lookup input form */}
-            <form onSubmit={handleLookup} className="flex flex-wrap gap-2.5 pt-3 max-w-md">
+            <form onSubmit={handleLookup} className="flex w-full flex-col gap-2.5 pt-3 sm:max-w-md sm:flex-row">
               <label htmlFor="reference-lookup-input" className="sr-only">
                 Reference Code
               </label>
@@ -234,12 +234,12 @@ export default function MyRequestsView() {
                 onChange={(e) => setLookupId(e.target.value)}
                 placeholder="Enter Reference Code (e.g. REQ-...)"
                 disabled={lookupLoading}
-                className="bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500 flex-1 min-w-[180px] disabled:opacity-60"
+                className="h-11 w-full min-w-0 bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2 text-base font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500 sm:flex-1 disabled:opacity-60"
               />
               <Button
                 type="submit"
                 disabled={lookupLoading || !lookupId.trim()}
-                className="bg-red-600 hover:bg-red-500 text-white font-mono text-xs uppercase font-bold py-2 px-4 rounded-xl transition-all cursor-pointer flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-11 bg-red-600 hover:bg-red-500 text-white font-mono text-xs uppercase font-bold py-2 px-4 rounded-xl transition-all cursor-pointer flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Search className={`h-3.5 w-3.5 ${lookupLoading ? "animate-spin" : ""}`} />
                 <span>{lookupLoading ? "Searching..." : "Link Ref"}</span>
@@ -267,7 +267,7 @@ export default function MyRequestsView() {
             onClick={fetchSubmissions}
             disabled={loading}
             aria-busy={loading}
-            className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-[10px] font-mono font-bold text-white px-4 py-2.5 rounded-xl border border-white/5 transition-all shrink-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="h-11 w-full flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-[10px] font-mono font-bold text-white px-4 py-2.5 rounded-xl border border-white/5 transition-all shrink-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed md:w-auto"
           >
             <RefreshCw className={`h-3.5 w-3.5 text-red-400 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh Status</span>
@@ -276,12 +276,12 @@ export default function MyRequestsView() {
       </motion.div>
 
       {loading ? (
-        <div className="p-16 border border-white/5 bg-slate-950/45 backdrop-blur-md rounded-2xl text-center text-slate-400 font-mono text-xs flex flex-col items-center justify-center space-y-3.5">
+        <div className="px-4 py-12 sm:p-16 border border-white/5 bg-slate-950/45 backdrop-blur-md rounded-2xl text-center text-slate-400 font-mono text-xs flex flex-col items-center justify-center space-y-3.5">
           <RefreshCw className="h-6 w-6 animate-spin text-red-500" />
           <span>Connecting to RRS Autos secure cloud index...</span>
         </div>
       ) : fetchError ? (
-        <div className="p-16 border border-rose-900/30 bg-rose-950/10 backdrop-blur-md rounded-2xl text-center space-y-3.5">
+        <div className="px-4 py-12 sm:p-16 border border-rose-900/30 bg-rose-950/10 backdrop-blur-md rounded-2xl text-center space-y-3.5">
           <AlertCircle className="h-6 w-6 text-rose-400 mx-auto" />
           <p className="text-rose-400 font-mono text-xs">{fetchError}</p>
           <Button
@@ -295,7 +295,7 @@ export default function MyRequestsView() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
 
           {/* Scrap Car Valuations with metallic borders */}
-          <div className="bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl p-6 space-y-5">
+          <div className="min-w-0 bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl p-4 space-y-5 sm:p-6">
             <h3 className="text-xs font-bold text-white uppercase tracking-widest font-mono border-l-2 border-amber-500 pl-3">
               My Scrap Valuations ({scrapValuations.length})
             </h3>
@@ -307,16 +307,16 @@ export default function MyRequestsView() {
                     key={val.id ?? idx}
                     variants={{itemVariants}}
                     whileHover={{ scale: 1.01 }}
-                    className="bg-slate-900/60 border border-white/5 rounded-xl p-5 space-y-4"
+                    className="min-w-0 bg-slate-900/60 border border-white/5 rounded-xl p-4 space-y-4 sm:p-5"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1.5">
+                    <div className="flex flex-col justify-between items-start gap-4 sm:flex-row">
+                      <div className="min-w-0 space-y-1.5">
                         <h4 className="text-sm font-black text-white">{val.vehicleName}</h4>
                         <span className="text-[9px] text-amber-400 font-mono uppercase bg-amber-950/50 px-2.5 py-0.5 rounded border border-amber-900/40 inline-block font-bold">
                           Reg: {val.registration}
                         </span>
                       </div>
-                      <div className="text-right flex flex-col items-end gap-1">
+                      <div className="flex shrink-0 flex-col items-start gap-1 text-left sm:items-end sm:text-right">
                         <span className="text-[9px] text-slate-500 font-mono uppercase block tracking-wider">Scrap Payout</span>
                         <span className="text-emerald-400 font-extrabold text-xl font-mono">£{val.estimatedValue}</span>
                         <span className={`text-[8px] font-mono uppercase px-2 py-0.5 rounded border font-black tracking-widest block transform scale-90 origin-right ${
@@ -359,7 +359,7 @@ export default function MyRequestsView() {
           </div>
 
           {/* Part Spare Inquiries */}
-          <div className="bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl p-6 space-y-5">
+          <div className="min-w-0 bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl p-4 space-y-5 sm:p-6">
             <h3 className="text-xs font-bold text-white uppercase tracking-widest font-mono border-l-2 border-red-500 pl-3">
               Spare Part Inquiries ({partQuotes.length})
             </h3>
@@ -371,10 +371,10 @@ export default function MyRequestsView() {
                     key={req.requestId ?? idx}
                     variants={{itemVariants}}
                     whileHover={{ scale: 1.01 }}
-                    className="bg-slate-900/60 border border-white/5 rounded-xl p-5 space-y-4"
+                    className="min-w-0 bg-slate-900/60 border border-white/5 rounded-xl p-4 space-y-4 sm:p-5"
                   >
-                    <div className="flex justify-between items-start gap-4 text-left">
-                      <div className="flex-1">
+                    <div className="flex flex-col justify-between items-start gap-4 text-left sm:flex-row">
+                      <div className="min-w-0 w-full flex-1">
                         <h4 className="text-sm font-black text-white">{req.vehicleName}</h4>
                         <p className="text-xs text-slate-300 font-sans mt-3 bg-slate-950/50 p-3.5 rounded-xl border border-white/5 whitespace-pre-line leading-relaxed shadow-inner">
                           {req.partsNeeded}
@@ -413,9 +413,9 @@ export default function MyRequestsView() {
                     )}
 
                     <div className="pt-3.5 border-t border-white/5 flex flex-wrap justify-between items-center text-[10px] text-slate-500 font-mono gap-2">
-                      <div className="flex items-center space-x-1.5">
-                        <Clock className="h-3 w-3 inline" />
-                        <span>ID: {req.requestId}</span>
+                      <div className="flex min-w-0 items-start gap-1.5">
+                        <Clock className="mt-0.5 h-3 w-3 shrink-0" />
+                        <span className="min-w-0 break-all">ID: {req.requestId}</span>
                       </div>
                       <span className={`${
                         req.status === "Part Located" || req.status === "Shipped"
