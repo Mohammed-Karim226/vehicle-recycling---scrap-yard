@@ -136,22 +136,22 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
 
   return (
     <Dialog open={!!vehicle} onOpenChange={handleOpenChange}>
-      <DialogContent className="app-scrollbar max-w-md w-full max-h-[85vh] overflow-y-auto border border-white/10 bg-slate-950/95 backdrop-blur-3xl text-left select-none">
+      <DialogContent className="app-scrollbar border border-white/10 bg-slate-950/95 backdrop-blur-3xl text-left">
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-tr from-red-500/5 to-transparent pointer-events-none"></div>
 
         {vehicle && (
           <>
             {status !== "success" ? (
               <div className="space-y-4">
-                <DialogHeader className="space-y-1.5">
+                <DialogHeader className="space-y-1.5 pr-10 text-left">
                   <span className="text-red-400 font-mono text-[9px] font-bold uppercase tracking-widest flex items-center mb-1">
                     <Calendar className="h-3.5 w-3.5 mr-1" />
                     Arrived: {vehicle.arrivedDate}
                   </span>
-                  <DialogTitle className="text-xl font-black text-white uppercase tracking-tight">
+                  <DialogTitle className="break-words text-xl font-black text-white uppercase tracking-tight">
                     {vehicle.make} {vehicle.model} ({vehicle.year})
                   </DialogTitle>
-                  <DialogDescription className="text-xs text-slate-400 font-mono">
+                  <DialogDescription className="break-words text-xs text-slate-400 font-mono">
                     Variant & Color: {vehicle.trim} • {vehicle.color}
                   </DialogDescription>
                 </DialogHeader>
@@ -182,7 +182,7 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
                           <Input
                             {...field}
                             placeholder="e.g. Front Bumper, OE Headlight, Side Door Glass..."
-                            className="h-11 w-full bg-slate-900 border border-white/5 text-white placeholder-slate-700 font-semibold focus-visible:ring-red-500 focus-visible:border-red-500 rounded-lg text-xs"
+                            className="h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-white placeholder-slate-700 font-semibold focus-visible:ring-red-500 focus-visible:border-red-500 rounded-lg text-base"
                           />
                           {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
@@ -191,7 +191,7 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
                   </div>
 
                   {/* Customer details */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <FieldLabel className="text-[9px] font-bold uppercase tracking-widest font-mono text-slate-400 mb-1.5 block">
                         Your Name *
@@ -204,7 +204,8 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
                             <Input
                               {...field}
                               placeholder="e.g. John"
-                              className="h-11 w-full bg-slate-900 border border-white/5 text-white placeholder-slate-700 focus-visible:ring-red-500 focus-visible:border-red-500 rounded-lg text-xs"
+                              autoComplete="name"
+                              className="h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-white placeholder-slate-700 focus-visible:ring-red-500 focus-visible:border-red-500 rounded-lg text-base"
                             />
                             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                           </Field>
@@ -224,8 +225,9 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
                             <Input
                               {...field}
                               type="tel"
+                              autoComplete="tel"
                               placeholder="e.g. 07340 765940"
-                              className="h-11 w-full bg-slate-900 border border-white/5 text-white placeholder-slate-700 font-mono focus-visible:ring-red-500 focus-visible:border-red-500 rounded-lg text-xs"
+                              className="h-11 w-full min-w-0 bg-slate-900 border border-white/5 text-white placeholder-slate-700 font-mono focus-visible:ring-red-500 focus-visible:border-red-500 rounded-lg text-base"
                             />
                             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                           </Field>
@@ -272,7 +274,7 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
 
                 <div className="bg-slate-900 p-4 rounded-xl border border-white/5 font-mono space-y-1.5 text-center select-all shadow-inner">
                   <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Request Reference ID</span>
-                  <div className="text-white font-black text-lg tracking-wide">{submittedRequestId}</div>
+                  <div className="break-all text-base font-black leading-relaxed tracking-wide text-white sm:text-lg">{submittedRequestId}</div>
                 </div>
 
                 <p className="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
@@ -286,7 +288,7 @@ export function RequestPartDialog({ vehicle, onClose, onQuoteAdded }: RequestPar
                 <div className="pt-2">
                   <button
                     onClick={onClose}
-                    className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 border border-white/5 text-slate-200 font-bold text-xs font-mono py-2.5 px-6 rounded-lg uppercase transition-colors cursor-pointer"
+                    className="min-h-11 w-full sm:w-auto bg-slate-900 hover:bg-slate-800 border border-white/5 text-slate-200 font-bold text-xs font-mono py-2.5 px-6 rounded-lg uppercase transition-colors cursor-pointer"
                   >
                     Close Window
                   </button>

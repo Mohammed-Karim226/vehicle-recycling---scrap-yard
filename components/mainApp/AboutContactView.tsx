@@ -57,14 +57,14 @@ export default function AboutContactView() {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-12"
+      className="min-w-0 space-y-8 break-words sm:space-y-12"
       id="about-contact-tab-view"
     >
       <motion.div
         variants={{ itemVariants }}
         className="relative p-[1px] bg-gradient-to-r from-red-500/20 via-pink-500/20 to-amber-500/20 rounded-2xl overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.3)]"
       >
-        <div className="bg-slate-950/70 backdrop-blur-3xl p-6 sm:p-8 rounded-[15px] relative z-10 space-y-4">
+        <div className="bg-slate-950/70 backdrop-blur-3xl p-4 sm:p-8 rounded-[15px] relative z-10 space-y-4">
           <span className="text-red-500 font-mono text-[9px] uppercase font-bold tracking-widest block">
             About RRS Autos Peterborough
           </span>
@@ -81,7 +81,7 @@ export default function AboutContactView() {
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="min-w-0 lg:col-span-2 space-y-6">
           <h3 className="text-xs font-bold text-white uppercase tracking-widest font-mono border-l-2 border-red-500 pl-3">
             Why Choose RRS Autos?
           </h3>
@@ -126,7 +126,7 @@ export default function AboutContactView() {
 
         <motion.div
           variants={{ itemVariants }}
-          className="bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl p-6 space-y-6 shadow-xl"
+          className="min-w-0 bg-slate-950/45 backdrop-blur-md border border-white/5 rounded-2xl p-4 space-y-6 shadow-xl sm:p-6"
         >
           <h3 className="text-white font-bold font-mono tracking-widest uppercase text-xs border-l-2 border-red-500 pl-3">
             Thorney Yard Details
@@ -140,7 +140,7 @@ export default function AboutContactView() {
               {openingHours.map((day) => (
                 <div
                   key={day.label}
-                  className="flex justify-between border-b border-white/5 pb-2 last:border-b-0 last:pb-0"
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-white/5 pb-2 last:border-b-0 last:pb-0"
                 >
                   <span className={day.isClosed ? "text-slate-500" : undefined}>
                     {day.label}
@@ -150,7 +150,7 @@ export default function AboutContactView() {
                       {day.hours}
                     </span>
                   ) : (
-                    <span className="text-white font-semibold">
+                    <span className="whitespace-nowrap text-white font-semibold">
                       {day.hours}
                     </span>
                   )}
@@ -179,7 +179,7 @@ export default function AboutContactView() {
                   <Phone className="h-4 w-4 text-red-400 shrink-0" />
                   <a
                     href={contactPhoneHref}
-                    className="hover:text-red-300 transition-colors"
+                    className="inline-flex min-h-11 items-center hover:text-red-300 transition-colors"
                   >
                     {contactPhone}
                   </a>
@@ -188,7 +188,7 @@ export default function AboutContactView() {
                   <Mail className="h-4 w-4 text-red-400 shrink-0" />
                   <a
                     href={`mailto:${contactEmail}`}
-                    className="hover:text-red-300 transition-colors text-[11px] truncate"
+                    className="flex min-h-11 min-w-0 items-center break-all text-[11px] hover:text-red-300 transition-colors"
                   >
                     {contactEmail}
                   </a>
@@ -203,7 +203,7 @@ export default function AboutContactView() {
         variants={{ itemVariants }}
         className="relative group p-[1px] bg-gradient-to-r from-red-500/10 via-pink-500/10 to-amber-500/10 rounded-2xl overflow-hidden"
       >
-        <div className="bg-slate-950/50 backdrop-blur-xl border border-white/5 p-6 text-center space-y-4 relative overflow-hidden rounded-[15px]">
+        <div className="bg-slate-950/50 backdrop-blur-xl border border-white/5 p-4 text-center space-y-4 relative overflow-hidden rounded-[15px] sm:p-6">
           <div className="absolute inset-x-0 bottom-0 h-24 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="max-w-md mx-auto relative z-10 space-y-3">
@@ -220,7 +220,7 @@ export default function AboutContactView() {
               href="https://www.google.com/maps/search/?api=1&query=52.6191,-0.1066"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block p-2.5 bg-slate-900/60 hover:bg-slate-800/60 rounded-xl border border-white/5 text-[10px] text-slate-400 hover:text-red-300 tracking-wider font-mono transition-colors"
+              className="inline-flex min-h-11 max-w-full items-center justify-center p-2.5 bg-slate-900/60 hover:bg-slate-800/60 rounded-xl border border-white/5 text-[10px] text-slate-400 hover:text-red-300 tracking-wider font-mono transition-colors"
             >
               📍 Get Directions — 52°37&apos;08.8&quot;N 0°06&apos;23.8&quot;W
             </a>

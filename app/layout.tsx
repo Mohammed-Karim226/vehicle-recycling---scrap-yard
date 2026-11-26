@@ -1,26 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Lobster } from "next/font/google";
-import "./globals.css";
-import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
-
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
-
-const lobster = Lobster({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-lobster",
-});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { workSans } from "./fonts";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Vehicle Recycling Scrap Yard",
@@ -33,21 +14,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={cn(
-        "h-full",
-        "antialiased",
-        geistSans.variable,
-        geistMono.variable,
-        inter.variable,
-        lobster.variable,
-        "font-sans"
-      )}
-    >
+    <html lang="en" className={`${workSans.variable} h-full font-sans antialiased`}>
       <body className="min-h-full flex flex-col">
         {children}
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-right" richColors style={{ fontFamily: "inherit" }} />
       </body>
     </html>
   );

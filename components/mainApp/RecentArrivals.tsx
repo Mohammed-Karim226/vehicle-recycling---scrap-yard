@@ -66,9 +66,9 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
       : "Updated: Live";
 
   return (
-    <div className="space-y-6 pt-4">
-      <div className="flex justify-between items-end">
-        <div className="space-y-1.5 flex flex-col items-start text-left">
+    <div className="min-w-0 space-y-6 pt-4">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+        <div className="min-w-0 space-y-1.5 flex flex-col items-start text-left">
           <span className={`text-[9px] font-mono font-bold uppercase tracking-widest block bg-white/[0.02] border border-white/5 rounded-full px-2.5 py-0.5 ${
             fetchError ? "text-amber-400" : usingFallback ? "text-slate-400" : "text-red-450"
           }`}>
@@ -81,7 +81,7 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
 
         <Button
           onClick={() => setCurrentTab("parts")}
-          className="text-red-400 hover:text-red-350 text-xs font-mono font-bold uppercase flex items-center space-x-1.5 hover:underline cursor-pointer"
+          className="min-h-11 w-full text-red-400 hover:text-red-350 text-xs font-mono font-bold uppercase flex items-center space-x-1.5 hover:underline cursor-pointer sm:w-auto"
         >
           <span>Browse All Spares</span>
           <ArrowRight className="h-3.5 w-3.5" />
@@ -89,14 +89,14 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
       </div>
 
       <div
-        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"
         id="recent-arrivals-container"
       >
         {displayVehicles.map((vehicle: VehicleYard) => (
           <motion.div
             key={vehicle.id}
             whileHover={{ y: -4 }}
-            className="bg-slate-950/45 backdrop-blur-md border border-white/5 hover:border-red-500/25 rounded-2xl overflow-hidden group transition-all text-left"
+            className="min-w-0 bg-slate-950/45 backdrop-blur-md border border-white/5 hover:border-red-500/25 rounded-2xl overflow-hidden group transition-all text-left"
           >
             <div className="h-44 bg-slate-900 relative">
               <Image
@@ -104,7 +104,7 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
                 alt={`${vehicle.make} ${vehicle.model}`}
                 referrerPolicy="no-referrer"
                 fill
-                sizes="(min-width: 768px) 33vw, 100vw"
+                sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
                 unoptimized
                 className="object-cover group-hover:scale-102 transition-transform duration-300"
               />
@@ -112,7 +112,7 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
                 New Stock
               </span>
             </div>
-            <div className="p-5 space-y-1.5">
+            <div className="break-words p-4 space-y-1.5 sm:p-5">
               <span className="text-[9px] text-slate-500 font-mono uppercase font-bold">
                 {vehicle.make} {vehicle.model}
               </span>
@@ -124,7 +124,7 @@ const RecentArrivals = ({setCurrentTab}:{setCurrentTab: (tab: string) => void}) 
               </p>
               <Button
                 onClick={() => setCurrentTab("parts")}
-                className="text-[10px] text-red-400 font-mono font-bold tracking-widest uppercase pt-3.5 block hover:text-red-300 text-left cursor-pointer border-t border-white/[0.03] mt-2.5"
+                className="mt-2.5 h-auto min-h-11 w-full justify-start whitespace-normal border-t border-white/[0.03] px-0 py-3 text-left text-[10px] font-mono font-bold leading-relaxed tracking-widest uppercase text-red-400 hover:text-red-300 cursor-pointer"
               >
                 Request parts from this car →
               </Button>

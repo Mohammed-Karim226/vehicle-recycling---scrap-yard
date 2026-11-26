@@ -1,10 +1,10 @@
 "use client";
 
-import { useReducer, useRef, useEffect, useCallback } from "react";
+import { useReducer, useRef, useEffect, useCallback, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { MapPin, Sparkles, Scale, Info, CheckCircle2, RotateCcw, ArrowRight, Loader2, Phone, MessageCircle } from "lucide-react";
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { buildWhatsAppLink, buildScrapQuoteMessage } from "@/lib/whatsapp";
 interface ScrapQuoteSectionProps {
   onQuoteAdded: () => void;
   inlineLayout?: boolean;
+  onStepChange?: () => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -109,9 +110,26 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionProps) {
+export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = true, onStepChange }: ScrapQuoteSectionProps) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { status, valuation, confirmedContact, errorMsg } = state;
+  const fieldId = useId();
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const hasShownResultRef = useRef(false);
+  const reduceMotion = useReducedMotion();
+
+  const revealStep = useCallback(() => {
+    onStepChange?.();
+    if (status === "idle" && !hasShownResultRef.current) return;
+    hasShownResultRef.current = true;
+    // Focus the new heading without letting the browser jump to the phone field.
+    stepHeadingRef.current?.focus({ preventScroll: true });
+    const headerBottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
+    if (inlineLayout && widgetRef.current && widgetRef.current.getBoundingClientRect().top < headerBottom) {
+      widgetRef.current.scrollIntoView({ block: "start", behavior: "instant" });
+    }
+  }, [inlineLayout, onStepChange, status]);
 
   const quoteForm = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteFormSchema),
@@ -231,40 +249,41 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
   const quoteConfirmed = status === "confirmed";
 
   return (
-    <div className="relative p-[1px] bg-gradient-to-r from-red-500 via-pink-500 to-amber-500 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden" id="quote-widget-container">
+    <div ref={widgetRef} className="relative min-w-0 scroll-mt-36 sm:scroll-mt-40 xl:scroll-mt-24 p-[1px] bg-gradient-to-r from-red-500 via-pink-500 to-amber-500 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] animate-[shimmer_3.5s_infinite] pointer-events-none"></div>
 
-      <div className="bg-slate-950/90 backdrop-blur-3xl p-6 sm:p-8 rounded-[15px] relative z-10 space-y-6">
+      <div className="bg-slate-950/90 backdrop-blur-3xl p-4 sm:p-6 lg:p-8 rounded-[15px] relative z-10 space-y-6">
         <AnimatePresence mode="wait">
           {!valuation ? (
             <motion.div
               key="quote-input-fields"
-              initial={{ opacity: 0, scale: 0.98 }}
+              initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
+              exit={{ opacity: 0, scale: reduceMotion ? 1 : 0.98 }}
+              onAnimationComplete={revealStep}
               transition={{ type: "spring", stiffness: 350, damping: 28 }}
             >
-              <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white uppercase font-sans flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-red-500" />
-                    Instant Scrap Valuation
+              <div className="mb-5 flex flex-col items-start justify-between gap-3 xl:flex-row xl:items-center">
+                <div className="min-w-0 text-left">
+                  <h2 ref={stepHeadingRef} tabIndex={-1} className="text-xl sm:text-2xl font-black tracking-tight text-white uppercase font-sans flex items-start gap-2 outline-none">
+                    <Sparkles className="mt-1 h-5 w-5 shrink-0 text-red-500" />
+                    <span>Instant Scrap Valuation</span>
                   </h2>
                   <p className="text-[10px] text-slate-400 font-mono tracking-widest uppercase mt-1">
                     Powered by Live London Metal Exchange Spot Index
                   </p>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-xl flex items-center space-x-2">
+                <div className="max-w-full bg-white/5 border border-white/10 px-3 py-2 rounded-xl flex flex-wrap items-center gap-x-2 gap-y-1">
                   <div className="text-amber-500 flex font-sans text-xs" aria-hidden="true">★★★★★</div>
                   <div className="text-[10px] text-slate-300 font-bold font-mono uppercase">4.8 / 5 Rating</div>
                 </div>
               </div>
 
-              <form onSubmit={submitQuote} className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+              <form onSubmit={submitQuote} className="grid min-w-0 grid-cols-1 gap-4 items-start sm:grid-cols-2" aria-busy={quoteSubmitting}>
                 {/* Registration field */}
-                <div>
-                  <FieldLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-2 block">
+                <div className="min-w-0">
+                  <FieldLabel htmlFor={`${fieldId}-registration`} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-2 block">
                     Vehicle Registration
                   </FieldLabel>
                   <Controller
@@ -280,8 +299,13 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                           </div>
                           <Input
                             {...field}
+                            id={`${fieldId}-registration`}
+                            autoCapitalize="characters"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            enterKeyHint="next"
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            placeholder="e.g. WU04UDA"
+                            placeholder="WU04 UDA"
                             className={cn(
                               "h-auto w-full pl-10 pr-4 py-3 bg-gradient-to-br from-amber-400 to-amber-500 text-slate-950 placeholder-slate-800/50 font-black font-mono tracking-widest text-lg uppercase border border-amber-600 rounded-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/30 text-center relative z-0"
                             )}
@@ -295,8 +319,8 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                 </div>
 
                 {/* Postcode field */}
-                <div>
-                  <FieldLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-2 block">
+                <div className="min-w-0">
+                  <FieldLabel htmlFor={`${fieldId}-postcode`} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-2 block">
                     Your Postcode
                   </FieldLabel>
                   <Controller
@@ -309,9 +333,15 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                           <MapPin className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-500 h-5 w-5 z-10" />
                           <Input
                             {...field}
+                            id={`${fieldId}-postcode`}
+                            autoComplete="postal-code"
+                            autoCapitalize="characters"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            enterKeyHint="go"
                             placeholder="e.g. PE1 5YP"
                             className={cn(
-                              "h-auto w-full pl-11 pr-4 py-3.5 bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-bold font-mono tracking-wide text-md rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-red-500 uppercase relative z-0"
+                              "h-auto min-h-12 w-full pl-11 pr-4 py-3.5 bg-slate-900 border border-white/5 text-white placeholder-slate-500 font-bold font-mono tracking-wide text-base rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-red-500 uppercase relative z-0"
                             )}
                             maxLength={10}
                           />
@@ -323,12 +353,11 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                 </div>
 
                 {/* Submission CTA */}
-                <div className="pt-7">
+                <div className="min-w-0 sm:col-span-2">
                   <button
-                    id="submit-get-quote-btn"
                     type="submit"
                     disabled={quoteSubmitting}
-                    className="w-full group bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-extrabold uppercase py-3.5 px-6 rounded-lg transition-all shadow-xl active:scale-[0.98] disabled:bg-slate-800 disabled:text-slate-500 flex items-center justify-center space-x-2 tracking-widest text-xs font-mono cursor-pointer border border-white/15"
+                    className="min-h-12 w-full group bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-extrabold uppercase py-3.5 px-4 rounded-lg transition-all shadow-xl active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 tracking-widest text-xs font-mono cursor-pointer border border-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                   >
                     {quoteSubmitting ? (
                       <>
@@ -359,17 +388,18 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
           ) : !quoteConfirmed ? (
             <motion.div
               key="valuation-results-sec"
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: reduceMotion ? 0 : 15 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
+              exit={{ opacity: 0, y: reduceMotion ? 0 : -15 }}
+              onAnimationComplete={revealStep}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="space-y-6 text-left"
+              className="min-w-0 space-y-5 text-left sm:space-y-6"
             >
               <div className="text-center space-y-2">
-                <span className="px-3 py-1 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-full font-mono text-[9px] uppercase font-bold tracking-widest">
+                <span className="inline-block max-w-full px-3 py-1.5 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-full font-mono text-[9px] uppercase font-bold tracking-widest">
                   Vehicle Identifiers Discovered
                 </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white mt-3 font-sans leading-tight uppercase">
+                <h3 ref={stepHeadingRef} tabIndex={-1} className="break-words text-2xl sm:text-3xl font-black text-white mt-3 font-sans leading-tight uppercase outline-none">
                   {valuation.vehicleName}
                 </h3>
 
@@ -433,20 +463,20 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                 </p>
               </div>
 
-              <div className="bg-slate-900/40 border border-white/5 p-6 rounded-xl flex flex-col items-center justify-center relative overflow-hidden text-center shadow-inner">
-                <div className="absolute top-3 right-3 flex items-center space-x-1.5 text-[8px] font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-900/30">
+              <div className="min-w-0 bg-slate-900/40 border border-white/5 p-4 sm:p-6 rounded-xl flex flex-col items-center justify-center gap-3 relative overflow-hidden text-center shadow-inner">
+                <div className="inline-flex max-w-full items-center justify-center gap-1.5 text-[8px] font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-900/30">
                   <span className="h-1 w-1 bg-emerald-400 rounded-full animate-ping"></span>
                   <span>London Metal Exchange Index</span>
                 </div>
 
                 <p className="text-[10px] uppercase tracking-widest text-slate-400 font-mono font-bold">Guaranteed Scrap Value</p>
 
-                <div className="flex items-center justify-center mt-3 text-red-500 font-black text-5xl sm:text-6xl tracking-tight select-all">
+                <div className="flex max-w-full items-baseline justify-center text-red-500 font-black text-[clamp(2.5rem,10vw,3.75rem)] tracking-tight tabular-nums select-all">
                   <span className="text-3xl sm:text-4xl text-red-600 mr-0.5">£</span>
                   {valuation.estimatedValue}
                 </div>
 
-                <div className="mt-3 flex items-center space-x-1.5 text-[11px] text-slate-500 font-mono">
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
                   <Scale className="h-3.5 w-3.5 text-slate-600" />
                   <span>Est. Weight: {valuation.weightKg} kg</span>
                 </div>
@@ -475,12 +505,13 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                 </div>
               )}
 
-              <div className="bg-white/[0.02] border border-white/5 rounded-xl p-5 space-y-4">
+              <div className="min-w-0 bg-white/[0.02] border border-white/5 rounded-xl p-3 sm:p-5 space-y-4">
                 <h4 className="text-xs font-bold text-slate-300 font-mono uppercase tracking-wider text-center">
                   🔐 Schedule instant pickup & unlock bank transfer:
                 </h4>
 
                 <form onSubmit={submitConfirm} className="space-y-3.5">
+                  <FieldLabel htmlFor={`${fieldId}-contact`} className="text-xs text-slate-300">Mobile phone number</FieldLabel>
                   <Controller
                     name="contactInfo"
                     control={confirmForm.control}
@@ -490,15 +521,19 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                           <Phone className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-500 h-4.5 w-4.5 z-10" />
                           <Input
                             {...field}
+                            id={`${fieldId}-contact`}
                             type="tel"
-                            placeholder="Your Mobile Phone / Contact Info"
+                            autoComplete="tel"
+                            inputMode="tel"
+                            enterKeyHint="done"
+                            placeholder="Your mobile number"
                             className={cn(
-                              "h-auto w-full pl-11 pr-4 py-3 bg-slate-900 border border-white/5 text-white placeholder-slate-600 font-medium font-mono rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 text-xs"
+                              "h-auto min-h-12 w-full pl-11 pr-4 py-3 bg-slate-900 border border-white/5 text-white placeholder-slate-500 font-medium font-mono rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 text-base"
                             )}
                           />
                         </div>
-                        <FieldDescription className="text-emerald-400 text-xs mt-2 flex items-center gap-2">
-                          <span className="inline-block w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
+                        <FieldDescription className="text-emerald-400 text-xs mt-2 flex items-start gap-2">
+                          <span className="mt-1 inline-block w-2 h-2 shrink-0 bg-emerald-400 rounded-full animate-ping" />
                           We&apos;ll text you within 15 minutes to confirm pickup
                         </FieldDescription>
                         {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -512,7 +547,7 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                     </div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
                     {valuation && (
                       <a
                         href={buildWhatsAppLink({
@@ -521,9 +556,9 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                         })}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 active:scale-[0.98] text-white font-extrabold uppercase py-3.5 px-5 rounded-lg text-xs font-mono tracking-wider transition-all text-center flex items-center justify-center space-x-2 cursor-pointer border border-white/10 shadow-lg shadow-green-500/10"
+                        className="min-h-12 min-w-0 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 active:scale-[0.98] text-white font-extrabold uppercase py-3 px-3 rounded-lg text-xs font-mono tracking-wide transition-all text-center flex items-center justify-center gap-2 cursor-pointer border border-white/10 shadow-lg shadow-green-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
                       >
-                        <MessageCircle className="h-4 w-4" />
+                        <MessageCircle className="h-4 w-4 shrink-0" />
                         <span>Send Quote via WhatsApp</span>
                       </a>
                     )}
@@ -531,7 +566,7 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                     <button
                       type="submit"
                       disabled={confirmSubmitting}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-extrabold uppercase py-3.5 px-5 rounded-lg text-xs font-mono tracking-wider transition-all text-center flex items-center justify-center space-x-2 disabled:bg-slate-800 disabled:text-slate-500 cursor-pointer border border-white/10 shadow-lg shadow-emerald-500/10"
+                      className="min-h-12 min-w-0 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-extrabold uppercase py-3 px-3 rounded-lg text-xs font-mono tracking-wide transition-all text-center flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer border border-white/10 shadow-lg shadow-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
                     >
                       {confirmSubmitting ? (
                         <>
@@ -541,7 +576,7 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                       ) : (
                         <>
                           <span>Book Free Pick-up Slot</span>
-                          <ArrowRight className="h-4 w-4 animate-pulse" />
+                          <ArrowRight className="h-4 w-4 shrink-0" />
                         </>
                       )}
                     </button>
@@ -549,7 +584,7 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
                     <button
                       type="button"
                       onClick={handleReset}
-                      className="px-4 py-3 bg-slate-900 hover:bg-slate-850 hover:text-white border border-white/5 text-slate-400 rounded-lg text-xs font-mono font-bold uppercase transition-colors"
+                      className="min-h-11 px-4 py-3 bg-slate-900 hover:bg-slate-800 hover:text-white border border-white/5 text-slate-400 rounded-lg text-xs font-mono font-bold uppercase transition-colors sm:col-span-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                     >
                       Calculate New
                     </button>
@@ -560,8 +595,9 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
           ) : (
             <motion.div
               key="success-confirmation"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
+              onAnimationComplete={revealStep}
               className="text-center py-6 space-y-4"
             >
               <div className="inline-flex items-center justify-center h-16 w-16 bg-emerald-950 border border-emerald-900 rounded-full text-emerald-400 mx-auto shadow-lg shadow-emerald-500/10">
@@ -569,10 +605,10 @@ export default function ScrapQuoteSection({ onQuoteAdded }: ScrapQuoteSectionPro
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-xl sm:text-2xl font-black text-white font-sans uppercase">Collection Booked Live!</h3>
+                <h3 ref={stepHeadingRef} tabIndex={-1} className="break-words text-xl sm:text-2xl font-black text-white font-sans uppercase outline-none">Collection Booked Live!</h3>
                 <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
                   Excellent! Our Oxney Road recovery crew has logged your collection request. We will contact you at{" "}
-                  <span className="font-mono text-emerald-400 underline font-bold">{confirmedContact}</span> within 15 minutes to
+                  <span className="break-all font-mono text-emerald-400 underline font-bold">{confirmedContact}</span> within 15 minutes to
                   organize on-site pickup & immediate payout transfer.
                 </p>
               </div>
