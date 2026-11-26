@@ -12,6 +12,7 @@ import {
 } from '@/lib/validation/schemas'
 import type { ScrapValuation, ScrapQuoteStatus } from '@prisma/client'
 import { lookupVehicle, DVLAError, type DVLAVehicleResponse, estimateWeightKg } from '@/lib/dvla'
+import type { ScrapVehicleDetails } from '@/types/types'
 import { enforceRateLimit } from '@/lib/security/rateLimit'
 import { getScrapQuoteHourlyLimit } from '@/lib/env'
 import { updateTag } from 'next/cache'
@@ -61,6 +62,18 @@ export type GeneratedScrapValuation = {
   mileage?: string
   colour?: string
   defects?: string[]
+  vehicleDetails: ScrapVehicleDetails
+}
+
+function getFirstRegistrationDate({ monthOfFirstRegistration, yearOfFirstRegistration }: DVLAVehicleResponse): string | undefined {
+  if (typeof monthOfFirstRegistration === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(monthOfFirstRegistration)) {
+    return monthOfFirstRegistration
+  }
+  if (yearOfFirstRegistration === undefined) return undefined
+  if (typeof monthOfFirstRegistration === 'number') {
+    return `${yearOfFirstRegistration}-${String(monthOfFirstRegistration).padStart(2, '0')}`
+  }
+  return String(yearOfFirstRegistration)
 }
 
 export async function generateScrapValuation(
@@ -180,6 +193,21 @@ export async function generateScrapValuation(
         mileage: '',
         colour,
         defects: [],
+        vehicleDetails: {
+          engineCapacityCc,
+          yearOfManufacture: dvlaData.yearOfManufacture,
+          firstRegistered: getFirstRegistrationDate(dvlaData),
+          wheelPlan: dvlaData.wheelplan,
+          typeApproval: dvlaData.typeApproval,
+          co2Emissions: dvlaData.co2Emissions,
+          euroStatus: dvlaData.euroStatus,
+          revenueWeightKg: dvlaData.revenueWeight,
+          taxStatus: dvlaData.taxStatus,
+          taxDueDate: dvlaData.taxDueDate,
+          dateOfLastV5CIssued: dvlaData.dateOfLastV5CIssued,
+          markedAsScrapped: dvlaData.markedAsScrapped,
+          markedForExport: dvlaData.markedForExport,
+        },
       }
     })
   } catch (error) {

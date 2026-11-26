@@ -244,6 +244,18 @@ test('a successful lookup persists vehicle details and returns the existing trac
       colour: 'BLUE',
       motStatus: 'Valid',
       motExpiryDate: '2027-03-15',
+      yearOfFirstRegistration: 2008,
+      monthOfFirstRegistration: 4,
+      wheelplan: '2 AXLE RIGID BODY',
+      typeApproval: 'M1',
+      co2Emissions: 159,
+      euroStatus: 'EURO 4',
+      revenueWeight: 1820,
+      taxStatus: 'Taxed',
+      taxDueDate: '2027-04-01',
+      dateOfLastV5CIssued: '2024-07-15',
+      markedAsScrapped: false,
+      markedForExport: true,
     },
   });
 
@@ -260,6 +272,21 @@ test('a successful lookup persists vehicle details and returns the existing trac
   assert.equal(result.colour, 'BLUE');
   assert.equal(result.motStatus, 'Valid');
   assert.equal(result.motExpiryDate, '2027-03-15');
+  assert.deepEqual(result.vehicleDetails, {
+    engineCapacityCc: 1596,
+    yearOfManufacture: 2008,
+    firstRegistered: '2008-04',
+    wheelPlan: '2 AXLE RIGID BODY',
+    typeApproval: 'M1',
+    co2Emissions: 159,
+    euroStatus: 'EURO 4',
+    revenueWeightKg: 1820,
+    taxStatus: 'Taxed',
+    taxDueDate: '2027-04-01',
+    dateOfLastV5CIssued: '2024-07-15',
+    markedAsScrapped: false,
+    markedForExport: true,
+  });
   assert.ok(Number.isFinite(result.estimatedValue) && result.estimatedValue >= 50);
   assert.ok(Number.isFinite(result.weightKg) && result.weightKg > 0);
   assert.equal(calls.valuations.length, 1);
@@ -283,8 +310,27 @@ test('missing optional vehicle data does not invent a current year or petrol fue
   assert.equal(result.engineSize, 'Unknown');
   assert.equal(result.motStatus, 'No details held');
   assert.equal(result.motExpiryDate, '');
+  assert.ok(Object.values(result.vehicleDetails).every((value) => value === undefined));
   assert.equal(calls.valuations[0].vehicleName, 'FORD');
   assert.equal(calls.valuations[0].fuelType, 'Unknown');
+});
+
+test('older DVLA registration dates and zero emissions reach the valuation result', async () => {
+  const { generateScrapValuation } = createQuoteFixture({
+    vehicle: {
+      registrationNumber: 'AB12CDE',
+      make: 'NISSAN',
+      fuelType: 'ELECTRICITY',
+      monthOfFirstRegistration: '2012-09',
+      co2Emissions: 0,
+    },
+  });
+
+  const result = await generateScrapValuation('AB12CDE', 'CB1 1AA');
+
+  assert.equal(result.vehicleDetails.firstRegistered, '2012-09');
+  assert.equal(result.vehicleDetails.co2Emissions, 0);
+  assert.equal(result.vehicleDetails.engineCapacityCc, undefined);
 });
 
 test('an unexpected persistence failure returns a generic error without internal details', async () => {

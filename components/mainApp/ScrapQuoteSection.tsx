@@ -14,6 +14,7 @@ import { ScrapValuationResult } from "@/types/types";
 import { generateScrapValuation } from "@/lib/actions/scrapValuationActions";
 import { createPartRequest } from "@/lib/actions/partRequestActions";
 import { buildWhatsAppLink, buildScrapQuoteMessage } from "@/lib/whatsapp";
+import ScrapVehicleDetails from "./ScrapVehicleDetails";
 
 interface ScrapQuoteSectionProps {
   onQuoteAdded: () => void;
@@ -447,26 +448,10 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = true, o
                   {valuation.vehicleName}
                 </h3>
 
-                <div className="mt-2.5 flex flex-wrap justify-center gap-1.5 text-[10px] font-mono text-slate-400">
-                  <span className="px-2.5 py-1 bg-slate-900 text-amber-400 rounded-md border border-white/5 uppercase font-bold">
+                <div className="mt-2.5 flex justify-center">
+                  <span className="px-2.5 py-1 bg-slate-900 text-amber-400 rounded-md border border-white/5 text-[10px] font-mono uppercase font-bold">
                     Reg: {formatQuoteRegistration(valuation.registration)}
                   </span>
-                  <span className="px-2.5 py-1 bg-slate-900 text-stone-200 rounded-md border border-white/5 uppercase font-bold">
-                    Eng: {valuation.engineSize}
-                  </span>
-                  <span className="px-2.5 py-1 bg-slate-900 text-stone-200 rounded-md border border-white/5 font-bold">
-                    Fuel: {valuation.fuelType}
-                  </span>
-                  {valuation.colour && valuation.colour !== 'Unknown' && (
-                    <span className="px-2.5 py-1 bg-slate-900 text-stone-200 rounded-md border border-white/5 font-bold uppercase">
-                      Colour: {valuation.colour}
-                    </span>
-                  )}
-                  {valuation.mileage && (
-                    <span className="px-2.5 py-1 bg-slate-900 text-cyan-400 rounded-md border border-white/5 font-bold uppercase">
-                      Odometer: {valuation.mileage}
-                    </span>
-                  )}
                 </div>
 
                 {valuation.motStatus && (
@@ -525,6 +510,8 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = true, o
                   <span>Est. Weight: {valuation.weightKg} kg</span>
                 </div>
               </div>
+
+              <ScrapVehicleDetails valuation={valuation} />
 
               {valuation.defects && valuation.defects.length > 0 && (
                 <div className="bg-slate-950/40 border border-white/5 rounded-xl p-5 space-y-3 text-left">
