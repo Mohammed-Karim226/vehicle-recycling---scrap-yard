@@ -1,6 +1,24 @@
 import { z } from "zod";
 
 const scrapQuoteHourlyLimitSchema = z.coerce.number().int().min(1).max(10_000).default(60);
+const configuredAdminSchema = z.object({
+  email: z.email().max(254),
+  password: z.string().min(8).max(128),
+});
+
+export type ConfiguredAdmin = z.infer<typeof configuredAdminSchema>;
+
+export function getConfiguredAdmin(): ConfiguredAdmin | undefined {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (email === undefined && password === undefined) return undefined;
+
+  const parsed = configuredAdminSchema.safeParse({ email, password });
+  if (!parsed.success) {
+    throw new Error("Set ADMIN_EMAIL to a valid email and ADMIN_PASSWORD to a password of 8–128 characters.");
+  }
+  return parsed.data;
+}
 
 const envSchema = z
   .object({

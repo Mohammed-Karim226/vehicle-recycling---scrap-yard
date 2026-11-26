@@ -3,34 +3,38 @@ import "server-only";
 import { createHmac, scrypt as scryptCallback, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
-import { getEnv } from "@/lib/env";
+import { getConfiguredAdmin, getEnv, type ConfiguredAdmin } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { RateLimitError, UnauthorizedError } from "@/lib/errors";
 import { clearRateLimit, enforceRateLimit } from "@/lib/security/rateLimit";
 
 const COOKIE_NAME = "rrs_admin_session";
+const CONFIGURED_ADMIN_ID = "configured-admin";
 const LOGIN_RATE_LIMIT_SCOPE = "admin-login-v2";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 const scrypt = promisify(scryptCallback);
 
-function signPayload(payload: string): string {
-  return createHmac("sha256", getEnv().ADMIN_SESSION_SECRET)
-    .update(payload)
-    .digest("hex");
+function signPayload(payload: string, configuredAdmin?: ConfiguredAdmin): string {
+  const hmac = createHmac("sha256", getEnv().ADMIN_SESSION_SECRET).update(payload);
+  if (configuredAdmin) {
+    // Invalidate configured-admin sessions when either credential changes.
+    hmac.update(JSON.stringify([configuredAdmin.email, configuredAdmin.password]));
+  }
+  return hmac.digest("hex");
 }
 
-function buildToken(adminId: string, expiresAt: number): string {
+function buildToken(adminId: string, expiresAt: number, configuredAdmin?: ConfiguredAdmin): string {
   const payload = `${adminId}:${expiresAt}`;
-  return `${payload}:${signPayload(payload)}`;
+  return `${payload}:${signPayload(payload, configuredAdmin)}`;
 }
 
-function parseToken(token: string): { valid: boolean; adminId: string; expiresAt: number } {
+function parseToken(token: string, configuredAdmin?: ConfiguredAdmin): { valid: boolean; adminId: string; expiresAt: number } {
   const lastColon = token.lastIndexOf(":");
   if (lastColon <= 0) return { valid: false, adminId: "", expiresAt: 0 };
 
   const payload = token.slice(0, lastColon);
   const signature = token.slice(lastColon + 1);
-  const expected = signPayload(payload);
+  const expected = signPayload(payload, configuredAdmin);
 
   if (signature.length !== expected.length) return { valid: false, adminId: "", expiresAt: 0 };
 
@@ -76,18 +80,31 @@ export async function adminLogin(
     return { success: false, error: "Invalid credentials" };
   }
 
-  const admin = await prisma.adminUser.findUnique({ where: { email: normalizedEmail } });
-  const passwordValid = admin ? await verifyScrypt(password, admin.passwordHash) : false;
-  if (!admin?.isActive || !passwordValid) {
-    return { success: false, error: "Invalid credentials" };
+  const configuredAdmin = getConfiguredAdmin();
+  let adminId: string;
+  if (configuredAdmin) {
+    const provided = Buffer.from(password);
+    const expected = Buffer.from(configuredAdmin.password);
+    const passwordValid = provided.length === expected.length && timingSafeEqual(provided, expected);
+    if (normalizedEmail !== configuredAdmin.email || !passwordValid) {
+      return { success: false, error: "Invalid credentials" };
+    }
+    adminId = CONFIGURED_ADMIN_ID;
+  } else {
+    const admin = await prisma.adminUser.findUnique({ where: { email: normalizedEmail } });
+    const passwordValid = admin ? await verifyScrypt(password, admin.passwordHash) : false;
+    if (!admin?.isActive || !passwordValid) {
+      return { success: false, error: "Invalid credentials" };
+    }
+    adminId = admin.id;
+    await prisma.adminUser.update({
+      where: { id: adminId },
+      data: { lastLoginAt: new Date() },
+    });
   }
 
   const expiresAt = Date.now() + SESSION_MAX_AGE_SECONDS * 1000;
-  await setAdminCookie(buildToken(admin.id, expiresAt));
-  await prisma.adminUser.update({
-    where: { id: admin.id },
-    data: { lastLoginAt: new Date() },
-  });
+  await setAdminCookie(buildToken(adminId, expiresAt, configuredAdmin));
   try {
     await clearRateLimit(LOGIN_RATE_LIMIT_SCOPE);
   } catch (error) {
@@ -114,11 +131,14 @@ export async function checkAdminSession(): Promise<boolean> {
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return false;
 
-  const { valid, adminId, expiresAt } = parseToken(token);
+  const configuredAdmin = getConfiguredAdmin();
+  const { valid, adminId, expiresAt } = parseToken(token, configuredAdmin);
   if (!valid || expiresAt <= Date.now()) {
     cookieStore.delete(COOKIE_NAME);
     return false;
   }
+
+  if (configuredAdmin) return adminId === CONFIGURED_ADMIN_ID;
 
   const admin = await prisma.adminUser.findUnique({
     where: { id: adminId },
