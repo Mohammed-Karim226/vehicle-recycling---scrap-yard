@@ -6,17 +6,45 @@ export const uuidSchema = z
   .transform((value) => value.toLowerCase())
   .pipe(z.string().uuid("Invalid reference ID format"));
 
+const ukPostcodePattern = /^(?:GIR0AA|[A-Z]{1,2}\d[A-Z0-9]?\d[A-Z]{2})$/;
+const modernRegistrationStart = /^[A-Z]{2}\d{2}(?=[A-Z]|$)/;
+const modernRegistrationPattern = /^[A-Z]{2}\d{2}[A-Z]{3}$/;
+
+const compactRegistration = (value: string) => value.replace(/[\s-]/g, "").toUpperCase();
+const compactPostcode = (value: string) => value.replace(/\s+/g, "").toUpperCase();
+
+export function formatQuoteRegistration(value: string) {
+  const registration = compactRegistration(value);
+  if (modernRegistrationStart.test(registration)) {
+    return `${registration.slice(0, 4)} ${registration.slice(4)}`;
+  }
+  return value.toUpperCase().trimStart().replace(/^([A-Z]{2}\d{2}) (?=\d)/, "$1");
+}
+
+export function isCompleteModernRegistration(value: string) {
+  return modernRegistrationPattern.test(compactRegistration(value));
+}
+
+export function formatQuotePostcode(value: string) {
+  const postcode = compactPostcode(value);
+  if (!ukPostcodePattern.test(postcode)) return value.toUpperCase().replace(/\s+/g, " ").trimStart();
+  return `${postcode.slice(0, -3)} ${postcode.slice(-3)}`;
+}
+
 export const quoteInputSchema = z.object({
   registration: z
     .string()
-    .trim()
-    .transform((value) => value.replace(/[\s-]/g, "").toUpperCase())
-    .pipe(z.string().regex(/^[A-Z0-9]{2,12}$/)),
+    .transform(compactRegistration)
+    .pipe(z.string()
+      .regex(/^[A-Z0-9]{2,12}$/, "Enter a vehicle registration, e.g. AB12 CDE")
+      .refine(
+        (value) => value.length <= 4 || !modernRegistrationStart.test(value) || modernRegistrationPattern.test(value),
+        "Enter the full registration, e.g. AB12 CDE",
+      )),
   postcode: z
     .string()
-    .trim()
-    .transform((value) => value.replace(/\s+/g, "").toUpperCase())
-    .pipe(z.string().regex(/^[A-Z0-9]{3,10}$/)),
+    .transform(compactPostcode)
+    .pipe(z.string().regex(ukPostcodePattern, "Enter a UK postcode, e.g. PE1 5YP")),
 });
 
 export const partRequestCreateSchema = z.object({

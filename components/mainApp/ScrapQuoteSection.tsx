@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useRef, useEffect, useCallback, useId } from "react";
+import { useReducer, useRef, useEffect, useCallback, useId, type ChangeEvent } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,6 +9,7 @@ import { MapPin, Sparkles, Scale, Info, CheckCircle2, RotateCcw, ArrowRight, Loa
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { formatQuotePostcode, formatQuoteRegistration, isCompleteModernRegistration, quoteInputSchema } from "@/lib/validation/schemas";
 import { ScrapValuationResult } from "@/types/types";
 import { generateScrapValuation } from "@/lib/actions/scrapValuationActions";
 import { createPartRequest } from "@/lib/actions/partRequestActions";
@@ -40,19 +41,7 @@ function appendIdToStorage(key: string, id: string | undefined) {
 /* ------------------------------------------------------------------ */
 /* Zod schemas                                                         */
 /* ------------------------------------------------------------------ */
-const quoteFormSchema = z.object({
-  registration: z
-    .string()
-    .trim()
-    .min(2, "Enter a valid registration")
-    .max(12, "That registration looks too long"),
-  postcode: z
-    .string()
-    .trim()
-    .min(3, "Enter a valid postcode")
-    .max(10, "That postcode looks too long"),
-});
-type QuoteFormValues = z.infer<typeof quoteFormSchema>;
+type QuoteFormValues = z.infer<typeof quoteInputSchema>;
 
 const confirmFormSchema = z.object({
   contactInfo: z
@@ -62,6 +51,43 @@ const confirmFormSchema = z.object({
     .max(20, "That doesn't look like a valid number"),
 });
 type ConfirmFormValues = z.infer<typeof confirmFormSchema>;
+
+function changeFormattedInput(
+  event: ChangeEvent<HTMLInputElement>,
+  onChange: (value: string) => void,
+  format: (value: string) => string,
+  previousValue?: string,
+) {
+  const input = event.currentTarget;
+  const { value, selectionStart } = input;
+  const formatted = format(value);
+  const inputType = (event.nativeEvent as InputEvent).inputType;
+  // Backspace at the end of an automatically inserted space deletes the preceding character.
+  if (inputType === "deleteContentBackward" && formatted === previousValue && formatted === `${value} `) {
+    onChange(value.slice(0, -1));
+    return;
+  }
+  onChange(formatted);
+  if (formatted === value || selectionStart === null || selectionStart === value.length) return;
+
+  // Keep the caret next to the same character when formatting moves a separator.
+  const separator = /[\s-]/;
+  let remaining = value.slice(0, selectionStart).replace(/[\s-]/g, "").length;
+  let caret = 0;
+  while (caret < formatted.length && remaining > 0) {
+    if (!separator.test(formatted.charAt(caret))) remaining--;
+    caret++;
+  }
+
+  if (separator.test(formatted.charAt(caret)) && (
+    separator.test(value.charAt(selectionStart - 1)) ||
+    inputType === "deleteContentForward"
+  )) caret++;
+
+  requestAnimationFrame(() => {
+    if (document.activeElement === input && input.value === formatted) input.setSelectionRange(caret, caret);
+  });
+}
 
 /* ------------------------------------------------------------------ */
 /* Screen state machine — request lifecycle / server-side errors only. */
@@ -132,7 +158,7 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = true, o
   }, [inlineLayout, onStepChange, status]);
 
   const quoteForm = useForm<QuoteFormValues>({
-    resolver: zodResolver(quoteFormSchema),
+    resolver: zodResolver(quoteInputSchema),
     defaultValues: { registration: "", postcode: "" },
   });
 
@@ -160,10 +186,7 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = true, o
       abortControllerRef.current = controller;
 
       try {
-        const data = await generateScrapValuation(
-          values.registration.toUpperCase(),
-          values.postcode.toUpperCase()
-        );
+        const data = await generateScrapValuation(values.registration, values.postcode);
         
         if (!isMountedRef.current) return;
 
@@ -289,39 +312,57 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = true, o
                   <Controller
                     name="registration"
                     control={quoteForm.control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <div className="relative group/plate">
-                          <div className="absolute inset-0 bg-amber-400 rounded-lg blur opacity-15 group-hover/plate:opacity-30 transition-opacity"></div>
-                          <div className="absolute left-1 top-1 bottom-1 w-6 bg-blue-600 rounded-l-md flex flex-col justify-between py-1.5 px-0.5 text-center text-[7px] font-black text-white leading-none font-mono select-none z-10">
-                            <span>GB</span>
-                            <span className="text-[6px]">★</span>
-                          </div>
-                          <Input
-                            {...field}
-                            id={`${fieldId}-registration`}
-                            autoCapitalize="characters"
-                            autoCorrect="off"
-                            spellCheck={false}
-                            enterKeyHint="next"
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            placeholder="WU04 UDA"
-                            className={cn(
-                              "h-auto w-full pl-10 pr-4 py-3 bg-gradient-to-br from-amber-400 to-amber-500 text-slate-950 placeholder-slate-800/50 font-black font-mono tracking-widest text-lg uppercase border border-amber-600 rounded-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/30 text-center relative z-0"
+                    render={({ field, fieldState }) => {
+                      const registrationComplete = isCompleteModernRegistration(field.value);
+
+                      return (
+                        <Field data-invalid={fieldState.invalid}>
+                          <div className="relative group/plate">
+                            <div className="absolute inset-0 bg-amber-400 rounded-lg blur opacity-15 group-hover/plate:opacity-30 transition-opacity"></div>
+                            <div className="absolute left-1 top-1 bottom-1 w-6 bg-blue-600 rounded-l-md flex flex-col justify-between py-1.5 px-0.5 text-center text-[7px] font-black text-white leading-none font-mono select-none z-10">
+                              <span>GB</span>
+                              <span className="text-[6px]">★</span>
+                            </div>
+                            <Input
+                              {...field}
+                              id={`${fieldId}-registration`}
+                              autoCapitalize="characters"
+                              autoCorrect="off"
+                              spellCheck={false}
+                              enterKeyHint="next"
+                              onChange={(e) => changeFormattedInput(e, field.onChange, formatQuoteRegistration, field.value)}
+                              aria-invalid={fieldState.invalid}
+                              aria-describedby={fieldState.invalid ? `${fieldId}-registration-error` : undefined}
+                              placeholder="WU04 UDA"
+                              className={cn(
+                                "h-auto w-full pl-10 pr-4 py-3 bg-gradient-to-br from-amber-400 to-amber-500 text-slate-950 placeholder-slate-800/50 font-black font-mono tracking-widest text-lg uppercase border rounded-lg focus-visible:outline-none focus-visible:ring-4 text-center relative z-0",
+                                registrationComplete
+                                  ? "border-emerald-400 focus-visible:border-emerald-400 focus-visible:ring-emerald-400/30"
+                                  : "border-amber-600 focus-visible:border-amber-600 focus-visible:ring-amber-400/30"
+                              )}
+                              maxLength={12}
+                            />
+                            {registrationComplete && (
+                              <motion.span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute inset-0 z-10 rounded-lg border-2 border-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.55)]"
+                                initial={reduceMotion ? false : { opacity: 0 }}
+                                animate={{ opacity: reduceMotion ? 1 : [0, 1, 0.45, 1] }}
+                                transition={{ duration: reduceMotion ? 0 : 0.75, ease: "easeInOut" }}
+                              />
                             )}
-                            maxLength={12}
-                          />
-                        </div>
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                      </Field>
-                    )}
+                          </div>
+                          {fieldState.invalid && <FieldError id={`${fieldId}-registration-error`} errors={[fieldState.error]} />}
+                        </Field>
+                      );
+                    }}
                   />
                 </div>
 
                 {/* Postcode field */}
                 <div className="min-w-0">
                   <FieldLabel htmlFor={`${fieldId}-postcode`} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-2 block">
-                    Your Postcode
+                    UK Postcode
                   </FieldLabel>
                   <Controller
                     name="postcode"
@@ -339,6 +380,9 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = true, o
                             autoCorrect="off"
                             spellCheck={false}
                             enterKeyHint="go"
+                            onChange={(e) => changeFormattedInput(e, field.onChange, formatQuotePostcode)}
+                            aria-invalid={fieldState.invalid}
+                            aria-describedby={fieldState.invalid ? `${fieldId}-postcode-error` : undefined}
                             placeholder="e.g. PE1 5YP"
                             className={cn(
                               "h-auto min-h-12 w-full pl-11 pr-4 py-3.5 bg-slate-900 border border-white/5 text-white placeholder-slate-500 font-bold font-mono tracking-wide text-base rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-red-500 uppercase relative z-0"
@@ -346,7 +390,7 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = true, o
                             maxLength={10}
                           />
                         </div>
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && <FieldError id={`${fieldId}-postcode-error`} errors={[fieldState.error]} />}
                       </Field>
                     )}
                   />
@@ -405,7 +449,7 @@ export default function ScrapQuoteSection({ onQuoteAdded, inlineLayout = true, o
 
                 <div className="mt-2.5 flex flex-wrap justify-center gap-1.5 text-[10px] font-mono text-slate-400">
                   <span className="px-2.5 py-1 bg-slate-900 text-amber-400 rounded-md border border-white/5 uppercase font-bold">
-                    Reg: {valuation.registration}
+                    Reg: {formatQuoteRegistration(valuation.registration)}
                   </span>
                   <span className="px-2.5 py-1 bg-slate-900 text-stone-200 rounded-md border border-white/5 uppercase font-bold">
                     Eng: {valuation.engineSize}

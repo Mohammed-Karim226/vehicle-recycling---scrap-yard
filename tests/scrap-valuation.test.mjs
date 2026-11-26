@@ -7,6 +7,40 @@ const schemas = loadTypeScriptModule('lib/validation/schemas.ts');
 const { DVLAError, estimateWeightKg } = loadTypeScriptModule('lib/dvla.ts');
 const privateProviderDetail = 'PROVIDER_KEY_SENTINEL_NEVER_EXPOSE';
 
+test('quote inputs display UK spacing and submit compact uppercase values', () => {
+  assert.equal(schemas.formatQuoteRegistration('ab12'), 'AB12 ');
+  assert.equal(schemas.formatQuoteRegistration('ab12c'), 'AB12 C');
+  assert.equal(schemas.formatQuoteRegistration(' ab12-cde '), 'AB12 CDE');
+  assert.equal(schemas.formatQuoteRegistration('ab12 3'), 'AB123');
+  assert.equal(schemas.formatQuoteRegistration('a123 abc'), 'A123 ABC');
+  assert.equal(schemas.formatQuotePostcode('pe15'), 'PE15');
+  assert.equal(schemas.formatQuotePostcode('pe1 5'), 'PE1 5');
+
+  for (const postcode of ['M1 1AE', 'B33 8TH', 'W1A 0AX', 'PE1 5YP', 'DN55 1PT', 'EC1A 1BB', 'GIR 0AA']) {
+    const compact = postcode.replace(' ', '');
+    const displayedPostcode = schemas.formatQuotePostcode(compact.toLowerCase());
+    assert.equal(displayedPostcode, postcode);
+    assert.deepEqual(schemas.quoteInputSchema.parse({ registration: 'AB12 CDE', postcode: displayedPostcode }), {
+      registration: 'AB12CDE',
+      postcode: compact,
+    });
+  }
+});
+
+test('only complete modern registrations qualify for the green border', () => {
+  assert.equal(schemas.isCompleteModernRegistration('AB12 CDE'), true);
+
+  for (const registration of ['AB12 C', 'AB12 CD', 'AB12 CDEF', 'AB12 CD1']) {
+    assert.equal(schemas.isCompleteModernRegistration(registration), false);
+    assert.equal(schemas.quoteInputSchema.safeParse({ registration, postcode: 'PE1 5YP' }).success, false);
+  }
+
+  for (const registration of ['AB12', 'AB123', 'A123 ABC']) {
+    assert.equal(schemas.isCompleteModernRegistration(registration), false);
+    assert.equal(schemas.quoteInputSchema.safeParse({ registration, postcode: 'PE1 5YP' }).success, true);
+  }
+});
+
 test('the hourly cap defaults to 60 and accepts only configured whole numbers from 1 to 10000', () => {
   const previousEnv = process.env;
   try {
@@ -157,6 +191,11 @@ test('invalid input and local rate limits stop before vehicle lookup or quote wr
   const invalidInput = createQuoteFixture();
   const validationResult = await invalidInput.generateScrapValuation('!!', 'CB1 1AA');
   assert.match(validationResult.error, /invalid registration or postcode/i);
+  assert.deepEqual(invalidInput.calls.lookups, []);
+  assert.deepEqual(invalidInput.calls.valuations, []);
+
+  const invalidPostcode = await invalidInput.generateScrapValuation('AB12 CDE', 'PE1 5Y');
+  assert.match(invalidPostcode.error, /invalid registration or postcode/i);
   assert.deepEqual(invalidInput.calls.lookups, []);
   assert.deepEqual(invalidInput.calls.valuations, []);
 
